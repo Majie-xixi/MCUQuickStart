@@ -35,27 +35,20 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central)
 
         # --- SDK Config ---
-        sdk_group = QGroupBox("SDK Paths")
+        sdk_group = QGroupBox("SDK Root")
         sdk_layout = QVBoxLayout(sdk_group)
+        tip = QLabel("All chip SDK packages should be placed under this directory.")
+        tip.setStyleSheet("color: gray; font-size: 11px;")
+        sdk_layout.addWidget(tip)
 
-        gd_row = QHBoxLayout()
-        gd_row.addWidget(QLabel("GD32 SDK:"))
-        self._gd_path = QLineEdit(self._sdk.get_path("GD32"))
-        gd_row.addWidget(self._gd_path)
-        gd_btn = QPushButton("Browse...")
-        gd_btn.clicked.connect(lambda: self._browse_sdk("GD32", self._gd_path))
-        gd_row.addWidget(gd_btn)
-        sdk_layout.addLayout(gd_row)
-
-        st_row = QHBoxLayout()
-        st_row.addWidget(QLabel("STM32 SDK:"))
-        self._st_path = QLineEdit(self._sdk.get_path("STM32"))
-        st_row.addWidget(self._st_path)
-        st_btn = QPushButton("Browse...")
-        st_btn.clicked.connect(lambda: self._browse_sdk("STM32", self._st_path))
-        st_btn.setEnabled(False)
-        st_row.addWidget(st_btn)
-        sdk_layout.addLayout(st_row)
+        root_row = QHBoxLayout()
+        root_row.addWidget(QLabel("Root Path:"))
+        self._sdk_root = QLineEdit(self._sdk.get_path("SDK_ROOT"))
+        root_row.addWidget(self._sdk_root)
+        root_btn = QPushButton("Browse...")
+        root_btn.clicked.connect(lambda: self._browse_sdk("SDK_ROOT", self._sdk_root))
+        root_row.addWidget(root_btn)
+        sdk_layout.addLayout(root_row)
 
         layout.addWidget(sdk_group)
 
@@ -151,8 +144,8 @@ class MainWindow(QMainWindow):
         if not proj_name:
             QMessageBox.warning(self, "Error", "Please enter a project name.")
             return
-        if not self._sdk.get_path("GD32"):
-            QMessageBox.warning(self, "Error", "Please set the GD32 SDK path.")
+        if not self._sdk.get_path("SDK_ROOT"):
+            QMessageBox.warning(self, "Error", "Please set the SDK root directory.")
             return
 
         chip_config = self._chip_db.get_chip(family, chip)

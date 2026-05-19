@@ -38,11 +38,16 @@ class ProjectGenerator:
         family_lower = family_name.lower()
         cv = self._code_vars(chip_config)
 
-        # 1. Copy firmware from SDK
+        # 1. Copy firmware from SDK — resolve actual SDK dir from base root
         sdk_key = chip_config.get("sdk_key", chip_config.get("vendor", ""))
-        sdk_path = self._sdk.get_path(sdk_key)
-        if sdk_path:
-            self._sdk.copy_firmware(Path(sdk_path), chip_config, output_dir)
+        sdk_root = self._sdk.get_path(sdk_key)
+        sdk_path = self._sdk.resolve_sdk(sdk_root, chip_config.get("sdk_subdir", "")) if sdk_root else None
+        if not sdk_path:
+            subdir = chip_config.get("sdk_subdir", "unknown")
+            raise FileNotFoundError(
+                f"SDK package not found. Expected '{subdir}*' under {sdk_root}.\n"
+                f"Please download the {chip_config.get('family', '')} firmware library package.")
+        self._sdk.copy_firmware(Path(sdk_path), chip_config, output_dir)
 
         # 2. Create empty user directories
         for d in ["APP", "DRIVER", "HARDWARE"]:

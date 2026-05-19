@@ -27,6 +27,16 @@ class SDKManager:
         """Get SDK root path for a vendor."""
         return self._paths.get(vendor, "")
 
+    def resolve_sdk(self, sdk_root: str, sdk_subdir: str) -> str | None:
+        """Find SDK directory by name prefix under the SDK root directory."""
+        base = Path(sdk_root)
+        if not base.is_dir():
+            return None
+        for entry in base.iterdir():
+            if entry.is_dir() and entry.name.lower().startswith(sdk_subdir.lower()):
+                return str(entry)
+        return None
+
     def find_file(self, sdk_root: Path, relative_path: str) -> Path | None:
         """Search for a file by relative path, trying common SDK path prefixes."""
         for prefix in ("", "Firmware/", "Firmware/CMSIS/"):
