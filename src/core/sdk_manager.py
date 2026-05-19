@@ -28,13 +28,29 @@ class SDKManager:
         return self._paths.get(vendor, "")
 
     def find_file(self, sdk_root: Path, relative_path: str) -> Path | None:
-        """Search for a file by relative path. Returns None if not found."""
+        """Search for a file by relative path. Tries with and without Firmware/ prefix."""
         target = sdk_root / relative_path
+        if target.exists():
+            return target
+        target = sdk_root / "Firmware" / relative_path
         if target.exists():
             return target
         # Fallback: recursive search by filename
         filename = Path(relative_path).name
         matches = list(sdk_root.rglob(filename))
+        return matches[0] if matches else None
+
+    def _find_dir(self, sdk_root: Path, relative_path: str) -> Path | None:
+        """Search for a directory, trying with and without Firmware/ prefix."""
+        target = sdk_root / relative_path
+        if target.is_dir():
+            return target
+        target = sdk_root / "Firmware" / relative_path
+        if target.is_dir():
+            return target
+        # Fallback: recursive search by directory name
+        dirname = Path(relative_path).name
+        matches = [d for d in sdk_root.rglob(dirname) if d.is_dir()]
         return matches[0] if matches else None
 
     def copy_firmware(self, sdk_root: Path, chip_config: dict, dest_dir: Path):
@@ -50,7 +66,7 @@ class SDKManager:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(src.read_bytes())
 
-        # Copy system source and device headers
+        # Copy system source
         device_path = cmsis["device_path"]
         system_file = cmsis["system_source"]
         system_src = self.find_file(sdk_base, f"{device_path}/Source/{system_file}")
@@ -60,30 +76,27 @@ class SDKManager:
             dest.write_bytes(system_src.read_bytes())
 
         # Copy startup file(s)
-        startup_path = cmsis["startup_path"]
-        startup_dir = dest_dir / "CMSIS" / startup_path
+        startup_rel = cmsis["startup_path"]
+        startup_dir = dest_dir / "CMSIS" / startup_rel
         startup_dir.mkdir(parents=True, exist_ok=True)
 
-        sdk_startup = sdk_base / startup_path
-        if sdk_startup.exists():
-            for s_file in sdk_startup.glob("*.s"):
+        for s_file in sdk_base.rglob("*.s"):
+            if "startup_gd32f10x" in s_file.name.lower():
                 dest = startup_dir / s_file.name
                 dest.write_bytes(s_file.read_bytes())
 
         # Copy firmware include files
-        fw_include = cmsis["firmware_include"]
-        sdk_fw_inc = sdk_base / fw_include
+        sdk_fw_inc = self._find_dir(sdk_base, cmsis["firmware_include"])
         dest_fw_inc = dest_dir / "FIRMWARE" / "Include"
         dest_fw_inc.mkdir(parents=True, exist_ok=True)
-        if sdk_fw_inc.exists():
+        if sdk_fw_inc:
             for h_file in sdk_fw_inc.glob("*.h"):
                 (dest_fw_inc / h_file.name).write_bytes(h_file.read_bytes())
 
         # Copy firmware source files
-        fw_source = cmsis["firmware_source"]
-        sdk_fw_src = sdk_base / fw_source
+        sdk_fw_src = self._find_dir(sdk_base, cmsis["firmware_source"])
         dest_fw_src = dest_dir / "FIRMWARE" / "Source"
         dest_fw_src.mkdir(parents=True, exist_ok=True)
-        if sdk_fw_src.exists():
+        if sdk_fw_src:
             for c_file in sdk_fw_src.glob("*.c"):
                 (dest_fw_src / c_file.name).write_bytes(c_file.read_bytes())

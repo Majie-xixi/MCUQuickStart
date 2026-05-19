@@ -14,8 +14,8 @@
       "device_path": "GD/GD32F10x",
       "system_source": "system_gd32f10x.c",
       "startup_path": "GD/GD32F10x/Source/ARM",
-      "firmware_include": "FIRMWARE/Include",
-      "firmware_source": "FIRMWARE/Source"
+      "firmware_include": "GD32F10x_standard_peripheral/Include",
+      "firmware_source": "GD32F10x_standard_peripheral/Source"
     },
     "config": {
       "ram_start": "0x20000000",

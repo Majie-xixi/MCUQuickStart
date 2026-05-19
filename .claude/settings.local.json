@@ -3,7 +3,27 @@
     "allow": [
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(python -c \"from pip._internal.req import parse_requirements; list\\(parse_requirements\\('requirements.txt', session='none'\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python *)",
+      "Bash(git commit *)",
+      "Read(//e/IAXX_PMT/OptoCounter/SYSTEM/delay\" 2>/dev/**)",
+      "Read(//e/IAXX_PMT/OptoCounter/USER\" 2>/dev/**)",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/SYSTEM/delay/delay.c\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/delay.c\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/SYSTEM/delay/delay.h\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/delay.h\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/SYSTEM/sys/sysconfig.c\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/sysconfig.c\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/SYSTEM/sys/sysconfig.h\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/sysconfig.h\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/USER/main.h\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/common/main.h\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/USER/gd32f10x_it.c\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/common/gd32f10x_it.c\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/USER/gd32f10x_it.h\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/common/gd32f10x_it.h\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/USER/gd32f10x_libopt.h\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/common/gd32f10x_libopt.h\")",
+      "Bash(cp \"E:/IAXX_PMT/OptoCounter/USER/systick.c\" \"E:/MJ_Demo/Project_Tool/src/resources/templates/common/systick.c\")",
+      "Bash(git restore *)",
+      "Bash(git -C \"E:/MJ_Demo/Project_Tool\" status --short)",
+      "Bash(pip install *)",
+      "Bash(git remote *)",
+      "Bash(git push *)"
     ]
   }
 }
