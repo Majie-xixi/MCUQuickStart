@@ -79,14 +79,16 @@ class ProjectGenerator:
         """Build template variables map for uvprojx generation."""
         config = chip_config.get("config", {})
         startup = chip_config.get("startup", "")
-        # Derive flash driver name from startup: startup_gd32f10x_md.s → GD32F10x_MD
+        # Derive from startup: startup_gd32f10x_md.s → GD32F10x_MD, GD32F10X_MD
         flash_driver = startup.replace("startup_", "").replace(".s", "").upper()
+        density = startup.replace(".s", "").split("_")[-1].upper()
+        device_define = f"GD32F10X_{density}"
         return {
             "PROJECT_NAME": project_name,
             "CHIP": chip_config.get("device", chip_name),
             "DEVICE": chip_config.get("device", chip_name),
             "DEVICE_HEADER_BARE": chip_config.get("device_header", "").replace(".h", ""),
-            "DEVICE_DEFINE": chip_config.get("device_define", ""),
+            "DEVICE_DEFINE": device_define,
             "CPU_TYPE": config.get("cpu_type", ""),
             "RAM_START": config.get("ram_start", ""),
             "RAM_SIZE": self._kb_to_hex(chip_config.get("ram_kb", 20)),
