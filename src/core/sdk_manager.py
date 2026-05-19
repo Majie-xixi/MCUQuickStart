@@ -81,7 +81,7 @@ class SDKManager:
         startup_dir.mkdir(parents=True, exist_ok=True)
 
         for s_file in sdk_base.rglob("*.s"):
-            if "startup_gd32f10x" in s_file.name.lower():
+            if "startup_gd32f10x" in s_file.name.lower() and "/IAR/" not in s_file.as_posix():
                 dest = startup_dir / s_file.name
                 dest.write_bytes(s_file.read_bytes())
 
