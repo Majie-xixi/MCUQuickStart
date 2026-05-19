@@ -18,10 +18,9 @@ class ProjectGenerator:
         for src_file in template_dir.iterdir():
             if src_file.suffix in (".c", ".h") and src_file.name != "main.c":
                 content = src_file.read_text(encoding="utf-8", errors="replace")
-                # Remove SDK example function calls not present in our templates
-                if src_file.name.endswith("_it.c"):
-                    lines = [l for l in content.splitlines(True) if "led_spark" not in l]
-                    content = "".join(lines)
+                # Remove SDK example code not present in our minimal templates
+                lines = [l for l in content.splitlines(True) if "led_spark" not in l]
+                content = "".join(lines)
                 (user_dir / src_file.name).write_text(content, encoding="utf-8")
 
     def _code_vars(self, chip_config: dict) -> dict:
