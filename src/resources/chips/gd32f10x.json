@@ -3,6 +3,7 @@
     "family": "GD32F10x",
     "core": "Cortex-M3",
     "vendor": "GigaDevice",
+    "sdk_key": "GD32",
     "pack_id": "GigaDevice.GD32F10x_DFP.2.0.3",
     "device_header": "gd32f10x.h",
     "device_define": "GD32F10X_MD",
@@ -13,8 +14,8 @@
       "device_path": "GD/GD32F10x",
       "system_source": "system_gd32f10x.c",
       "startup_path": "GD/GD32F10x/Source/ARM",
-      "firmware_include": "Include",
-      "firmware_source": "Source"
+      "firmware_include": "FIRMWARE/Include",
+      "firmware_source": "FIRMWARE/Source"
     },
     "config": {
       "ram_start": "0x20000000",

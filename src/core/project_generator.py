@@ -9,14 +9,23 @@ class ProjectGenerator:
         self._templates_dir = templates_dir
         self._sdk = sdk_manager
 
+    def _code_vars(self, chip_config: dict) -> dict:
+        """Map chip_config fields to template placeholder names."""
+        return {
+            "DEVICE_HEADER": chip_config.get("device_header", ""),
+            "CHIP_FAMILY": chip_config.get("family", ""),
+            "DEVICE_DEFINE": chip_config.get("device_define", ""),
+        }
+
     def generate(self, family_name: str, chip_name: str, chip_config: dict,
                  project_name: str, output_dir: Path, template_type: str):
         """Generate a complete project."""
         output_dir.mkdir(parents=True, exist_ok=True)
+        cv = self._code_vars(chip_config)
 
         # 1. Copy firmware from SDK
-        vendor = chip_config.get("vendor", "")
-        sdk_path = self._sdk.get_path(vendor)
+        sdk_key = chip_config.get("sdk_key", chip_config.get("vendor", ""))
+        sdk_path = self._sdk.get_path(sdk_key)
         if sdk_path:
             self._sdk.copy_firmware(Path(sdk_path), chip_config, output_dir)
 
@@ -37,7 +46,7 @@ class ProjectGenerator:
         ]:
             src = sys_tmpl / src_name
             if src.exists():
-                render(src, dst_dir / src_name, chip_config)
+                render(src, dst_dir / src_name, cv)
 
         # 4. Copy common USER templates
         common_tmpl = self._templates_dir / "common"
@@ -46,13 +55,13 @@ class ProjectGenerator:
         if common_tmpl.exists():
             for src_file in common_tmpl.iterdir():
                 if src_file.is_file():
-                    render(src_file, user_dir / src_file.name, chip_config)
+                    render(src_file, user_dir / src_file.name, cv)
 
         # 5. Render the selected main.c template
         family_lower = family_name.lower()
         main_template = self._templates_dir / family_lower / template_type / "main.c"
         if main_template.exists():
-            render(main_template, user_dir / "main.c", chip_config)
+            render(main_template, user_dir / "main.c", cv)
 
         # 6. Generate .uvprojx from template
         uvprojx_template = self._templates_dir / family_lower / "uvprojx_template.xml"

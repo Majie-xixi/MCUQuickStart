@@ -2,9 +2,20 @@
 from pathlib import Path
 
 
+def _read_template(path: Path) -> str:
+    """Read a template file, trying common encodings."""
+    raw = path.read_bytes()
+    for encoding in ("utf-8", "gbk", "gb2312", "latin-1"):
+        try:
+            return raw.decode(encoding)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
 def render(template_path: Path, output_path: Path, variables: dict):
     """Read template file, replace {{VAR}} tokens with values, write output."""
-    content = template_path.read_text(encoding="utf-8")
+    content = _read_template(template_path)
     for key, value in variables.items():
         content = content.replace("{{" + key + "}}", str(value))
     output_path.parent.mkdir(parents=True, exist_ok=True)
