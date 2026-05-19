@@ -28,30 +28,30 @@ class SDKManager:
         return self._paths.get(vendor, "")
 
     def find_file(self, sdk_root: Path, relative_path: str) -> Path | None:
-        """Search for a file by relative path. Tries with and without Firmware/ prefix."""
-        target = sdk_root / relative_path
-        if target.exists():
-            return target
-        target = sdk_root / "Firmware" / relative_path
-        if target.exists():
-            return target
+        """Search for a file by relative path, trying common SDK path prefixes."""
+        for prefix in ("", "Firmware/", "Firmware/CMSIS/"):
+            target = sdk_root / prefix / relative_path
+            if target.exists():
+                return target
         # Fallback: recursive search by filename
         filename = Path(relative_path).name
         matches = list(sdk_root.rglob(filename))
         return matches[0] if matches else None
 
     def _find_dir(self, sdk_root: Path, relative_path: str) -> Path | None:
-        """Search for a directory, trying with and without Firmware/ prefix."""
-        target = sdk_root / relative_path
-        if target.is_dir():
-            return target
-        target = sdk_root / "Firmware" / relative_path
-        if target.is_dir():
-            return target
-        # Fallback: recursive search by directory name
+        """Search for a directory, trying common SDK path prefixes."""
+        for prefix in ("", "Firmware/", "Firmware/CMSIS/"):
+            target = sdk_root / prefix / relative_path
+            if target.is_dir():
+                return target
+        # Fallback: recursive search by directory name, prefer Firmware paths
         dirname = Path(relative_path).name
         matches = [d for d in sdk_root.rglob(dirname) if d.is_dir()]
-        return matches[0] if matches else None
+        if matches:
+            # Prefer paths under Firmware/
+            fw_matches = [m for m in matches if "/Firmware/" in m.as_posix()]
+            return (fw_matches or matches)[0]
+        return None
 
     def copy_firmware(self, sdk_root: Path, chip_config: dict, dest_dir: Path):
         """Copy firmware library files from SDK to project destination."""
@@ -66,8 +66,16 @@ class SDKManager:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(src.read_bytes())
 
-        # Copy system source
+        # Copy device include headers (gd32f10x.h, system_gd32f10x.h)
         device_path = cmsis["device_path"]
+        sdk_dev_inc = self._find_dir(sdk_base, f"{device_path}/Include")
+        dest_dev_inc = dest_dir / "CMSIS" / device_path / "Include"
+        dest_dev_inc.mkdir(parents=True, exist_ok=True)
+        if sdk_dev_inc:
+            for h_file in sdk_dev_inc.glob("*.h"):
+                (dest_dev_inc / h_file.name).write_bytes(h_file.read_bytes())
+
+        # Copy system source
         system_file = cmsis["system_source"]
         system_src = self.find_file(sdk_base, f"{device_path}/Source/{system_file}")
         if system_src:
