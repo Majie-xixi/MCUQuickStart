@@ -9,19 +9,16 @@ class ProjectGenerator:
         self._templates_dir = templates_dir
         self._sdk = sdk_manager
 
-    def _copy_sdk_templates(self, sdk_root: Path, user_dir: Path, cv: dict):
-        """Copy chip-specific USER files from SDK Template directory."""
+    def _copy_sdk_templates(self, sdk_root: Path, user_dir: Path, chip_config: dict):
+        """Copy chip-specific USER files from SDK Template directory (as-is, no rendering)."""
         template_dir = sdk_root / "Template"
         if not template_dir.is_dir():
             return
 
-        device_header = cv.get("DEVICE_HEADER", "")
         for src_file in template_dir.iterdir():
             if src_file.suffix in (".c", ".h") and src_file.name != "main.c":
-                content = src_file.read_text(encoding="utf-8", errors="replace")
-                content = content.replace("gd32f10x.h", device_header)
-                content = content.replace("gd32f4xx.h", device_header)
-                (user_dir / src_file.name).write_text(content, encoding="utf-8")
+                content = src_file.read_bytes()
+                (user_dir / src_file.name).write_bytes(content)
 
     def _code_vars(self, chip_config: dict) -> dict:
         """Map chip_config fields to template placeholder names."""
@@ -75,7 +72,7 @@ class ProjectGenerator:
         # 5. Copy chip-specific USER files from SDK Template directory
         #    (gd32f10x_it.c/h, gd32f10x_libopt.h, systick.c/h, main.h — always fresh from SDK)
         if sdk_path:
-            self._copy_sdk_templates(Path(sdk_path), user_dir, cv)
+            self._copy_sdk_templates(Path(sdk_path), user_dir, chip_config)
 
         # 6. Render the selected main.c template
         main_template = self._templates_dir / family_lower / template_type / "main.c"
@@ -98,11 +95,8 @@ class ProjectGenerator:
         """Build template variables map for uvprojx generation."""
         config = chip_config.get("config", {})
         startup = chip_config.get("startup", "")
-        # Use per-chip fields if present (F4), otherwise derive from startup (F10x)
-        flash_driver = chip_config.get("flash_driver",
-            startup.replace("startup_", "").replace(".s", "").upper())
-        device_define = chip_config.get("define",
-            f"GD32F10X_{startup.replace('.s', '').split('_')[-1].upper()}")
+        flash_driver = chip_config.get("flash_driver", "")
+        device_define = chip_config.get("define", "")
         return {
             "PROJECT_NAME": project_name,
             "CHIP": chip_config.get("device", chip_name),

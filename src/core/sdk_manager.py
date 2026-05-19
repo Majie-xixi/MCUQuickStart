@@ -83,15 +83,20 @@ class SDKManager:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(system_src.read_bytes())
 
-        # Copy startup file(s)
+        # Copy startup file(s) — find the ARM startup directory, copy all .s files
         startup_rel = cmsis["startup_path"]
         startup_dir = dest_dir / "CMSIS" / startup_rel
         startup_dir.mkdir(parents=True, exist_ok=True)
 
-        for s_file in sdk_base.rglob("*.s"):
-            if "startup_gd32f10x" in s_file.name.lower() and "/IAR/" not in s_file.as_posix():
-                dest = startup_dir / s_file.name
-                dest.write_bytes(s_file.read_bytes())
+        sdk_startup = self._find_dir(sdk_base, startup_rel)
+        if sdk_startup:
+            for s_file in sdk_startup.glob("*.s"):
+                (startup_dir / s_file.name).write_bytes(s_file.read_bytes())
+        else:
+            # Fallback: rglob for .s files, exclude IAR
+            for s_file in sdk_base.rglob("*.s"):
+                if s_file.name.startswith("startup_") and "/IAR/" not in s_file.as_posix():
+                    (startup_dir / s_file.name).write_bytes(s_file.read_bytes())
 
         # Copy firmware include files
         sdk_fw_inc = self._find_dir(sdk_base, cmsis["firmware_include"])
