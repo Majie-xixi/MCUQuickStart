@@ -9,6 +9,20 @@ class ProjectGenerator:
         self._templates_dir = templates_dir
         self._sdk = sdk_manager
 
+    def _copy_sdk_templates(self, sdk_root: Path, user_dir: Path, cv: dict):
+        """Copy chip-specific USER files from SDK Template directory."""
+        template_dir = sdk_root / "Template"
+        if not template_dir.is_dir():
+            return
+
+        device_header = cv.get("DEVICE_HEADER", "")
+        for src_file in template_dir.iterdir():
+            if src_file.suffix in (".c", ".h") and src_file.name != "main.c":
+                content = src_file.read_text(encoding="utf-8", errors="replace")
+                content = content.replace("gd32f10x.h", device_header)
+                content = content.replace("gd32f4xx.h", device_header)
+                (user_dir / src_file.name).write_text(content, encoding="utf-8")
+
     def _code_vars(self, chip_config: dict) -> dict:
         """Map chip_config fields to template placeholder names."""
         return {
@@ -21,6 +35,7 @@ class ProjectGenerator:
                  project_name: str, output_dir: Path, template_type: str):
         """Generate a complete project."""
         output_dir.mkdir(parents=True, exist_ok=True)
+        family_lower = family_name.lower()
         cv = self._code_vars(chip_config)
 
         # 1. Copy firmware from SDK
@@ -48,22 +63,26 @@ class ProjectGenerator:
             if src.exists():
                 render(src, dst_dir / src_name, cv)
 
-        # 4. Copy common USER templates
-        common_tmpl = self._templates_dir / "common"
+        # 4. Copy our custom USER templates (debug_print, retarget_printf, RTE_Components)
         user_dir = output_dir / "USER"
         user_dir.mkdir(parents=True, exist_ok=True)
-        if common_tmpl.exists():
-            for src_file in common_tmpl.iterdir():
+        global_common = self._templates_dir / "common"
+        if global_common.exists():
+            for src_file in global_common.iterdir():
                 if src_file.is_file():
                     render(src_file, user_dir / src_file.name, cv)
 
-        # 5. Render the selected main.c template
-        family_lower = family_name.lower()
+        # 5. Copy chip-specific USER files from SDK Template directory
+        #    (gd32f10x_it.c/h, gd32f10x_libopt.h, systick.c/h, main.h — always fresh from SDK)
+        if sdk_path:
+            self._copy_sdk_templates(Path(sdk_path), user_dir, cv)
+
+        # 6. Render the selected main.c template
         main_template = self._templates_dir / family_lower / template_type / "main.c"
         if main_template.exists():
             render(main_template, user_dir / "main.c", cv)
 
-        # 6. Generate .uvprojx from template
+        # 7. Generate .uvprojx from template
         uvprojx_template = self._templates_dir / family_lower / "uvprojx_template.xml"
         if uvprojx_template.exists():
             variables = self._build_uvprojx_vars(project_name, chip_name, chip_config)
@@ -79,10 +98,11 @@ class ProjectGenerator:
         """Build template variables map for uvprojx generation."""
         config = chip_config.get("config", {})
         startup = chip_config.get("startup", "")
-        # Derive from startup: startup_gd32f10x_md.s → GD32F10x_MD, GD32F10X_MD
-        flash_driver = startup.replace("startup_", "").replace(".s", "").upper()
-        density = startup.replace(".s", "").split("_")[-1].upper()
-        device_define = f"GD32F10X_{density}"
+        # Use per-chip fields if present (F4), otherwise derive from startup (F10x)
+        flash_driver = chip_config.get("flash_driver",
+            startup.replace("startup_", "").replace(".s", "").upper())
+        device_define = chip_config.get("define",
+            f"GD32F10X_{startup.replace('.s', '').split('_')[-1].upper()}")
         return {
             "PROJECT_NAME": project_name,
             "CHIP": chip_config.get("device", chip_name),
@@ -95,6 +115,7 @@ class ProjectGenerator:
             "ROM_START": config.get("rom_start", ""),
             "ROM_SIZE": self._kb_to_hex(chip_config.get("flash_kb", 64)),
             "CLOCK": config.get("clock", ""),
+            "CPU_FLAGS": config.get("cpu_flags", ""),
             "SIM_DLL": config.get("sim_dll", ""),
             "TARGET_DLL": config.get("target_dll", ""),
             "SIM_DLG_DLL": config.get("sim_dlg_dll", ""),
