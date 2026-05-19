@@ -83,7 +83,8 @@ class ProjectGenerator:
         flash_driver = startup.replace("startup_", "").replace(".s", "").upper()
         return {
             "PROJECT_NAME": project_name,
-            "CHIP": chip_name,
+            "CHIP": chip_config.get("device", chip_name),
+            "DEVICE": chip_config.get("device", chip_name),
             "DEVICE_HEADER_BARE": chip_config.get("device_header", "").replace(".h", ""),
             "DEVICE_DEFINE": chip_config.get("device_define", ""),
             "CPU_TYPE": config.get("cpu_type", ""),
