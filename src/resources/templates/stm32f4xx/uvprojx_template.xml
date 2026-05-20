@@ -335,7 +335,7 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--diag_suppress=47</MiscControls>
               <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}</Define>
               <Undefine></Undefine>
               <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Source\Templates\arm;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys</IncludePath>
