@@ -1,0 +1,83 @@
+{
+  "STM32F4xx": {
+    "family": "STM32F4xx",
+    "core": "Cortex-M4",
+    "vendor": "STMicroelectronics",
+    "sdk_key": "SDK_ROOT",
+    "sdk_subdir": "STM32F4xx_DSP_StdPeriph_Lib",
+    "pack_id": "Keil.STM32F4xx_DFP.2.17.1",
+    "device_header": "stm32f4xx.h",
+    "common_skip": ["retarget_printf.c"],
+    "cmsis": {
+      "core_headers": ["core_cm4.h", "core_cm4_simd.h", "core_cmFunc.h", "core_cmInstr.h"],
+      "device_path": "Libraries/CMSIS/Device/ST/STM32F4xx",
+      "system_source": "system_stm32f4xx.c",
+      "startup_path": "Libraries/CMSIS/Device/ST/STM32F4xx/Source/Templates/arm",
+      "firmware_include": "Libraries/STM32F4xx_StdPeriph_Driver/inc",
+      "firmware_source": "Libraries/STM32F4xx_StdPeriph_Driver/src",
+      "template_dir": "Project/STM32F4xx_StdPeriph_Templates"
+    },
+    "config": {
+      "ram_start": "0x20000000",
+      "rom_start": "0x08000000",
+      "cpu_type": "Cortex-M4",
+      "cpu_flags": "FPU2",
+      "clock": "8000000",
+      "sim_dll": "SARMCM3.DLL",
+      "target_dll": "SARMCM3.DLL",
+      "sim_dlg_dll": "DCM.DLL",
+      "target_dlg_dll": "TCM.DLL",
+      "dlg_arguments": "-pCM4"
+    },
+    "chips": {
+      "STM32F407VET6": {
+        "device": "STM32F407VE",
+        "define": "STM32F40_41xxx",
+        "ram_kb": 192,
+        "flash_kb": 512,
+        "startup": "startup_stm32f40_41xxx.s",
+        "flash_driver": "STM32F4xx_512"
+      },
+      "STM32F407VGT6": {
+        "device": "STM32F407VG",
+        "define": "STM32F40_41xxx",
+        "ram_kb": 192,
+        "flash_kb": 1024,
+        "startup": "startup_stm32f40_41xxx.s",
+        "flash_driver": "STM32F4xx_1M"
+      },
+      "STM32F407ZET6": {
+        "device": "STM32F407ZE",
+        "define": "STM32F40_41xxx",
+        "ram_kb": 192,
+        "flash_kb": 512,
+        "startup": "startup_stm32f40_41xxx.s",
+        "flash_driver": "STM32F4xx_512"
+      },
+      "STM32F407ZGT6": {
+        "device": "STM32F407ZG",
+        "define": "STM32F40_41xxx",
+        "ram_kb": 192,
+        "flash_kb": 1024,
+        "startup": "startup_stm32f40_41xxx.s",
+        "flash_driver": "STM32F4xx_1M"
+      },
+      "STM32F429IGT6": {
+        "device": "STM32F429IG",
+        "define": "STM32F429_439xx",
+        "ram_kb": 256,
+        "flash_kb": 1024,
+        "startup": "startup_stm32f429_439xx.s",
+        "flash_driver": "STM32F4xx_1M"
+      },
+      "STM32F429ZGT6": {
+        "device": "STM32F429ZG",
+        "define": "STM32F429_439xx",
+        "ram_kb": 256,
+        "flash_kb": 1024,
+        "startup": "startup_stm32f429_439xx.s",
+        "flash_driver": "STM32F4xx_1M"
+      }
+    }
+  }
+}

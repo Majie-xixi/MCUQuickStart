@@ -94,9 +94,11 @@ class SDKManager:
             for h_file in sdk_dev_inc.glob("*.h"):
                 (dest_dev_inc / h_file.name).write_bytes(h_file.read_bytes())
 
-        # Copy system source
+        # Copy system source (try Source/, Source/Templates/, then flat)
         system_file = cmsis["system_source"]
         system_src = self.find_file(sdk_base, f"{device_path}/Source/{system_file}")
+        if not system_src:
+            system_src = self.find_file(sdk_base, f"{device_path}/Source/Templates/{system_file}")
         if not system_src:
             system_src = self.find_file(sdk_base, f"{device_path}/{system_file}")
         if system_src:
