@@ -9,13 +9,16 @@ from PyQt6.QtCore import Qt
 from src.core.chip_db import ChipDatabase
 from src.core.sdk_manager import SDKManager
 from src.core.project_generator import ProjectGenerator
+from src.core.i18n import I18n
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MCU Template Generator")
-        self.setMinimumSize(650, 550)
+        self.setMinimumSize(680, 580)
+
+        self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
+        self._i18n.set_language("zh")
 
         self._sdk = SDKManager()
         self._sdk.load_config()
@@ -27,99 +30,153 @@ class MainWindow(QMainWindow):
         )
 
         self._build_ui()
+        self._retranslate_ui()
         self._populate_families()
 
+    # ── i18n helper ──────────────────────────────────────────────
+    def _tr(self, key: str, **kwargs) -> str:
+        return self._i18n.get(key, **kwargs)
+
+    # ── UI construction ──────────────────────────────────────────
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
 
+        # --- Top bar: language selector ---
+        top = QHBoxLayout()
+        top.addStretch()
+        top.addWidget(QLabel(""))
+        self._lang_label = top.itemAt(top.count() - 1).widget()
+        self._lang_combo = QComboBox()
+        self._lang_combo.addItems(["中文", "English"])
+        self._lang_combo.setCurrentText("中文")
+        self._lang_combo.currentTextChanged.connect(self._on_lang_changed)
+        top.addWidget(self._lang_combo)
+        layout.addLayout(top)
+
         # --- SDK Config ---
-        sdk_group = QGroupBox("SDK Root")
-        sdk_layout = QVBoxLayout(sdk_group)
-        tip = QLabel("All chip SDK packages should be placed under this directory.")
-        tip.setStyleSheet("color: gray; font-size: 11px;")
-        sdk_layout.addWidget(tip)
+        self._sdk_group = QGroupBox()
+        sdk_layout = QVBoxLayout(self._sdk_group)
+        self._sdk_tip = QLabel()
+        self._sdk_tip.setStyleSheet("color: gray; font-size: 11px;")
+        sdk_layout.addWidget(self._sdk_tip)
 
         root_row = QHBoxLayout()
-        root_row.addWidget(QLabel("Root Path:"))
+        self._root_label = QLabel()
+        root_row.addWidget(self._root_label)
         self._sdk_root = QLineEdit(self._sdk.get_path("SDK_ROOT"))
         root_row.addWidget(self._sdk_root)
-        root_btn = QPushButton("Browse...")
-        root_btn.clicked.connect(lambda: self._browse_sdk("SDK_ROOT", self._sdk_root))
-        root_row.addWidget(root_btn)
+        self._root_btn = QPushButton()
+        self._root_btn.clicked.connect(lambda: self._browse_sdk())
+        root_row.addWidget(self._root_btn)
         sdk_layout.addLayout(root_row)
 
-        layout.addWidget(sdk_group)
+        layout.addWidget(self._sdk_group)
 
         # --- Project Settings ---
-        proj_group = QGroupBox("Project Settings")
-        proj_layout = QVBoxLayout(proj_group)
+        self._proj_group = QGroupBox()
+        proj_layout = QVBoxLayout(self._proj_group)
 
         row1 = QHBoxLayout()
-        row1.addWidget(QLabel("Chip Family:"))
+        self._family_label = QLabel()
+        row1.addWidget(self._family_label)
         self._family_combo = QComboBox()
         self._family_combo.currentTextChanged.connect(self._on_family_changed)
         row1.addWidget(self._family_combo)
-        row1.addWidget(QLabel("Chip Model:"))
+        self._chip_label = QLabel()
+        row1.addWidget(self._chip_label)
         self._chip_combo = QComboBox()
         row1.addWidget(self._chip_combo)
         proj_layout.addLayout(row1)
 
         row2 = QHBoxLayout()
-        row2.addWidget(QLabel("Project Name:"))
+        self._name_label = QLabel()
+        row2.addWidget(self._name_label)
         self._proj_name = QLineEdit("MyProject")
         row2.addWidget(self._proj_name)
         proj_layout.addLayout(row2)
 
         row3 = QHBoxLayout()
-        row3.addWidget(QLabel("Output Dir:"))
+        self._out_label = QLabel()
+        row3.addWidget(self._out_label)
         self._output_dir = QLineEdit(str(Path.home() / "Desktop"))
         row3.addWidget(self._output_dir)
-        out_btn = QPushButton("Browse...")
-        out_btn.clicked.connect(self._browse_output)
-        row3.addWidget(out_btn)
+        self._out_btn = QPushButton()
+        self._out_btn.clicked.connect(self._browse_output)
+        row3.addWidget(self._out_btn)
         proj_layout.addLayout(row3)
 
-        layout.addWidget(proj_group)
+        layout.addWidget(self._proj_group)
 
         # --- Template Choice ---
-        tmpl_group = QGroupBox("Code Template")
-        tmpl_layout = QVBoxLayout(tmpl_group)
-        self._tmpl_empty = QRadioButton("Empty (main loop only)")
+        self._tmpl_group = QGroupBox()
+        tmpl_layout = QVBoxLayout(self._tmpl_group)
+        self._tmpl_empty = QRadioButton()
         self._tmpl_empty.setChecked(True)
-        self._tmpl_led = QRadioButton("LED Blink")
-        self._tmpl_uart = QRadioButton("UART Printf")
+        self._tmpl_led = QRadioButton()
+        self._tmpl_uart = QRadioButton()
         tmpl_layout.addWidget(self._tmpl_empty)
         tmpl_layout.addWidget(self._tmpl_led)
         tmpl_layout.addWidget(self._tmpl_uart)
-        layout.addWidget(tmpl_group)
+        layout.addWidget(self._tmpl_group)
 
         # --- Generate Button ---
-        gen_btn = QPushButton("Generate Project")
-        gen_btn.setMinimumHeight(36)
-        gen_btn.clicked.connect(self._on_generate)
-        layout.addWidget(gen_btn)
+        self._gen_btn = QPushButton()
+        self._gen_btn.setMinimumHeight(36)
+        self._gen_btn.clicked.connect(self._on_generate)
+        layout.addWidget(self._gen_btn)
 
         # --- Log Output ---
-        log_group = QGroupBox("Log")
-        log_layout = QVBoxLayout(log_group)
+        self._log_group = QGroupBox()
+        log_layout = QVBoxLayout(self._log_group)
         self._log = QTextEdit()
         self._log.setReadOnly(True)
         log_layout.addWidget(self._log)
-        layout.addWidget(log_group)
+        layout.addWidget(self._log_group)
 
-    def _browse_sdk(self, vendor: str, line_edit: QLineEdit):
-        path = QFileDialog.getExistingDirectory(self, f"Select {vendor} SDK Root")
+    # ── Retranslate all UI text ──────────────────────────────────
+    def _retranslate_ui(self):
+        self.setWindowTitle(self._tr("title"))
+        self._lang_label.setText(self._tr("language"))
+        self._sdk_group.setTitle(self._tr("sdk_root"))
+        self._sdk_tip.setText(self._tr("sdk_root_tip"))
+        self._root_label.setText(self._tr("root_path"))
+        self._root_btn.setText(self._tr("browse"))
+        self._proj_group.setTitle(self._tr("project_settings"))
+        self._family_label.setText(self._tr("chip_family"))
+        self._chip_label.setText(self._tr("chip_model"))
+        self._name_label.setText(self._tr("project_name"))
+        self._out_label.setText(self._tr("output_dir"))
+        self._out_btn.setText(self._tr("browse"))
+        self._tmpl_group.setTitle(self._tr("code_template"))
+        self._tmpl_empty.setText(self._tr("tmpl_empty"))
+        self._tmpl_led.setText(self._tr("tmpl_led"))
+        self._tmpl_uart.setText(self._tr("tmpl_uart"))
+        self._gen_btn.setText(self._tr("generate"))
+        self._log_group.setTitle(self._tr("log"))
+
+    # ── Language switch ──────────────────────────────────────────
+    def _on_lang_changed(self, text: str):
+        lang = "zh" if text == "中文" else "en"
+        self._i18n.set_language(lang)
+        self._retranslate_ui()
+
+    # ── SDK & output browsing ────────────────────────────────────
+    def _browse_sdk(self):
+        title = self._tr("select_sdk_root")
+        path = QFileDialog.getExistingDirectory(self, title)
         if path:
-            line_edit.setText(path)
-            self._sdk.set_path(vendor, path)
+            self._sdk_root.setText(path)
+            self._sdk.set_path("SDK_ROOT", path)
 
     def _browse_output(self):
-        path = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+        title = self._tr("select_output")
+        path = QFileDialog.getExistingDirectory(self, title)
         if path:
             self._output_dir.setText(path)
 
+    # ── Chip selection ───────────────────────────────────────────
     def _populate_families(self):
         families = self._chip_db.get_families()
         self._family_combo.addItems(families)
@@ -129,6 +186,7 @@ class MainWindow(QMainWindow):
         chips = self._chip_db.get_chips_for_family(family)
         self._chip_combo.addItems(chips)
 
+    # ── Generate ─────────────────────────────────────────────────
     def _log_msg(self, msg: str):
         self._log.append(msg)
 
@@ -139,18 +197,19 @@ class MainWindow(QMainWindow):
         output_dir = Path(self._output_dir.text().strip())
 
         if not family or not chip:
-            QMessageBox.warning(self, "Error", "Please select a chip.")
+            QMessageBox.warning(self, self._tr("error"), self._tr("err_select_chip"))
             return
         if not proj_name:
-            QMessageBox.warning(self, "Error", "Please enter a project name.")
+            QMessageBox.warning(self, self._tr("error"), self._tr("err_project_name"))
             return
         if not self._sdk.get_path("SDK_ROOT"):
-            QMessageBox.warning(self, "Error", "Please set the SDK root directory.")
+            QMessageBox.warning(self, self._tr("error"), self._tr("err_sdk_root"))
             return
 
         chip_config = self._chip_db.get_chip(family, chip)
         if not chip_config:
-            QMessageBox.warning(self, "Error", f"Chip {chip} not found in database.")
+            QMessageBox.warning(self, self._tr("error"),
+                                self._tr("err_chip_not_found", chip=chip))
             return
 
         tmpl_type = "empty"
@@ -161,10 +220,11 @@ class MainWindow(QMainWindow):
 
         try:
             output_path = output_dir / proj_name
-            self._log_msg(f"Generating {proj_name} for {chip} ({tmpl_type})...")
+            self._log_msg(self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type))
             self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type)
-            self._log_msg("Done! Project created at: " + str(output_path))
-            QMessageBox.information(self, "Success", f"Project generated at:\n{output_path}")
+            self._log_msg(self._tr("done", path=str(output_path)))
+            QMessageBox.information(self, self._tr("success"),
+                                    f"{output_path}")
         except Exception as e:
             self._log_msg(f"Error: {e}")
-            QMessageBox.critical(self, "Error", str(e))
+            QMessageBox.critical(self, self._tr("error"), str(e))
