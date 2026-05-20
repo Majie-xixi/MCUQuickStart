@@ -405,32 +405,17 @@
               <FileType>1</FileType>
               <FilePath>..\USER\main.c</FilePath>
             </File>
-            <File>
-              <FileName>main.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\USER\main.h</FilePath>
-            </File>
-            
-            
-            <File>
-              <FileName>retarget_printf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\USER\retarget_printf.c</FilePath>
-            </File>
+
+
             <File>
               <FileName>debug_print.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\USER\debug_print.h</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>CMSIS</GroupName>
-          <Files>
             <File>
               <FileName>system_stm32f10x.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\CMSIS\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\system_stm32f10x.c</FilePath>
+              <FilePath>..\USER\system_stm32f10x.c</FilePath>
             </File>
           </Files>
         </Group>
