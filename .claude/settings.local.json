@@ -23,7 +23,17 @@
       "Bash(git -C \"E:/MJ_Demo/Project_Tool\" status --short)",
       "Bash(pip install *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(python3 -c 'import json; d=json.load\\(open\\('\\\\''__TRACKED_VAR__'\\\\''\\)\\); print\\('\\\\''  Family:'\\\\'', d.get\\('\\\\''family'\\\\''\\)\\); print\\('\\\\''  Chips:'\\\\'', len\\(d.get\\('\\\\''chips'\\\\'',[]\\)\\), '\\\\''models'\\\\''\\); names=[c['\\\\''name'\\\\''] for c in d.get\\('\\\\''chips'\\\\'',[]\\)]; print\\('\\\\'' '\\\\'', '\\\\'', '\\\\''.join\\(names\\)\\)')",
+      "Bash(git tag -a v1.0.0 -m ' *)",
+      "Bash(pyinstaller *)",
+      "Bash(git credential *)",
+      "Bash(curl *)",
+      "WebFetch(domain:gitee.com)",
+      "Bash(git ls-remote *)",
+      "Bash(gh auth *)",
+      "Bash(git branch *)",
+      "Bash(base64 -w0 \"E:/MJ_Demo/Project_Tool/docs/图片1.png\")"
     ]
   }
 }
