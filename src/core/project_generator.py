@@ -116,14 +116,15 @@ class ProjectGenerator:
         return f"0x{int(kb) * 1024:X}"
 
     @staticmethod
-    def _scan_fwlib_files(project_dir: Path) -> str:
+    def _scan_fwlib_files(project_dir: Path, exclude: list[str] | None = None) -> str:
         """Scan FIRMWARE/ for actual .c and .h files, return FWLIB group XML."""
+        exclude_set = set(exclude or [])
         lines = []
         for folder, ftype in [("Source", 1), ("Include", 5)]:
             fw_dir = project_dir / "FIRMWARE" / folder
             if fw_dir.is_dir():
                 for f in sorted(fw_dir.iterdir()):
-                    if f.is_file() and f.suffix in (".c", ".h"):
+                    if f.is_file() and f.suffix in (".c", ".h") and f.name not in exclude_set:
                         lines.append(
                             f'            <File>\n'
                             f'              <FileName>{f.name}</FileName>\n'
@@ -168,5 +169,5 @@ class ProjectGenerator:
             "PACK_ID": chip_config.get("pack_id", ""),
             "STARTUP_FILE": startup,
             "FLASH_DRIVER": flash_driver,
-            "FWLIB_FILES": self._scan_fwlib_files(output_dir),
+            "FWLIB_FILES": self._scan_fwlib_files(output_dir, chip_config.get("fwlib_exclude")),
         }

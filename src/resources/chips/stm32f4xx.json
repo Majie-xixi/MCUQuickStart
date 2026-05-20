@@ -37,7 +37,8 @@
         "ram_kb": 192,
         "flash_kb": 512,
         "startup": "startup_stm32f40_41xxx.s",
-        "flash_driver": "STM32F4xx_512"
+        "flash_driver": "STM32F4xx_512",
+        "fwlib_exclude": ["stm32f4xx_fmc.c", "stm32f4xx_fmc.h"]
       },
       "STM32F407VGT6": {
         "device": "STM32F407VG",
@@ -45,7 +46,8 @@
         "ram_kb": 192,
         "flash_kb": 1024,
         "startup": "startup_stm32f40_41xxx.s",
-        "flash_driver": "STM32F4xx_1M"
+        "flash_driver": "STM32F4xx_1M",
+        "fwlib_exclude": ["stm32f4xx_fmc.c", "stm32f4xx_fmc.h"]
       },
       "STM32F407ZET6": {
         "device": "STM32F407ZE",
@@ -53,7 +55,8 @@
         "ram_kb": 192,
         "flash_kb": 512,
         "startup": "startup_stm32f40_41xxx.s",
-        "flash_driver": "STM32F4xx_512"
+        "flash_driver": "STM32F4xx_512",
+        "fwlib_exclude": ["stm32f4xx_fmc.c", "stm32f4xx_fmc.h"]
       },
       "STM32F407ZGT6": {
         "device": "STM32F407ZG",
@@ -61,7 +64,8 @@
         "ram_kb": 192,
         "flash_kb": 1024,
         "startup": "startup_stm32f40_41xxx.s",
-        "flash_driver": "STM32F4xx_1M"
+        "flash_driver": "STM32F4xx_1M",
+        "fwlib_exclude": ["stm32f4xx_fmc.c", "stm32f4xx_fmc.h"]
       },
       "STM32F429IGT6": {
         "device": "STM32F429IG",
