@@ -104,7 +104,7 @@ class ProjectGenerator:
         # 7. Generate .uvprojx from template
         uvprojx_template = self._templates_dir / family_lower / "uvprojx_template.xml"
         if uvprojx_template.exists():
-            variables = self._build_uvprojx_vars(project_name, chip_name, chip_config)
+            variables = self._build_uvprojx_vars(project_name, chip_name, chip_config, output_dir)
             mdk_dir = output_dir / "MDK-ARM"
             mdk_dir.mkdir(parents=True, exist_ok=True)
             render(uvprojx_template, mdk_dir / f"{project_name}.uvprojx", variables)
@@ -113,7 +113,25 @@ class ProjectGenerator:
     def _kb_to_hex(kb: int) -> str:
         return f"0x{int(kb) * 1024:X}"
 
-    def _build_uvprojx_vars(self, project_name: str, chip_name: str, chip_config: dict) -> dict:
+    @staticmethod
+    def _scan_fwlib_files(project_dir: Path) -> str:
+        """Scan FIRMWARE/ for actual .c and .h files, return FWLIB group XML."""
+        lines = []
+        for folder, ftype in [("Source", 1), ("Include", 5)]:
+            fw_dir = project_dir / "FIRMWARE" / folder
+            if fw_dir.is_dir():
+                for f in sorted(fw_dir.iterdir()):
+                    if f.is_file() and f.suffix in (".c", ".h"):
+                        lines.append(
+                            f'            <File>\n'
+                            f'              <FileName>{f.name}</FileName>\n'
+                            f'              <FileType>{ftype}</FileType>\n'
+                            f'              <FilePath>..\\FIRMWARE\\{folder}\\{f.name}</FilePath>\n'
+                            f'            </File>'
+                        )
+        return "\n".join(lines)
+
+    def _build_uvprojx_vars(self, project_name: str, chip_name: str, chip_config: dict, output_dir: Path) -> dict:
         """Build template variables map for uvprojx generation."""
         config = chip_config.get("config", {})
         startup = chip_config.get("startup", "")
@@ -148,4 +166,5 @@ class ProjectGenerator:
             "PACK_ID": chip_config.get("pack_id", ""),
             "STARTUP_FILE": startup,
             "FLASH_DRIVER": flash_driver,
+            "FWLIB_FILES": self._scan_fwlib_files(output_dir),
         }
