@@ -7,6 +7,7 @@
     "sdk_subdir": "GD32F10x_Firmware_Library",
     "pack_id": "GigaDevice.GD32F10x_DFP.2.0.3",
     "device_header": "gd32f10x.h",
+    "conf_header": "gd32f10x_libopt.h",
     "use_stdperiph_driver": true,
     "cmsis": {
       "core_headers": ["core_cm3.h", "core_cmFunc.h", "core_cmInstr.h"],

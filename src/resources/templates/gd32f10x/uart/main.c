@@ -1,4 +1,5 @@
 #include "{{DEVICE_HEADER}}"
+#include "{{CONF_HEADER}}"
 #include "main.h"
 #include "systick.h"
 #include "debug_print.h"

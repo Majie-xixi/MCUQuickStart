@@ -1,5 +1,5 @@
 #include "{{DEVICE_HEADER}}"
-#include "stm32f10x_conf.h"
+#include "{{CONF_HEADER}}"
 
 static void delay(volatile uint32_t n)
 {

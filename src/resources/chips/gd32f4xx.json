@@ -6,6 +6,7 @@
     "sdk_key": "SDK_ROOT",
     "pack_id": "GigaDevice.GD32F4xx_DFP.3.0.0",
     "device_header": "gd32f4xx.h",
+    "conf_header": "gd32f4xx_libopt.h",
     "use_stdperiph_driver": true,
     "sdk_subdir": "GD32F4xx_Firmware_Library",
     "cmsis": {
