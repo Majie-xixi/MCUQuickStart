@@ -11,8 +11,15 @@ class ProjectGenerator:
 
     def _copy_sdk_templates(self, sdk_root: Path, user_dir: Path, chip_config: dict):
         """Copy chip-specific USER files from SDK Template directory (as-is, no rendering)."""
-        template_dir = sdk_root / "Template"
+        cmsis = chip_config.get("cmsis", {})
+        template_rel = cmsis.get("template_dir", "Template")
+        template_dir = sdk_root / template_rel
         if not template_dir.is_dir():
+            # Fallback: recursive search
+            dirname = Path(template_rel).name
+            matches = [d for d in sdk_root.rglob(dirname) if d.is_dir()]
+            template_dir = matches[0] if matches else None
+        if not template_dir or not template_dir.is_dir():
             return
 
         for src_file in template_dir.iterdir():
@@ -87,6 +94,12 @@ class ProjectGenerator:
         main_template = self._templates_dir / family_lower / template_type / "main.c"
         if main_template.exists():
             render(main_template, user_dir / "main.c", cv)
+            # If main.c has its own printf retarget, remove the common one to avoid conflict
+            main_content = (user_dir / "main.c").read_text(encoding="utf-8", errors="replace")
+            if "fputc" in main_content or "_write" in main_content:
+                rt = user_dir / "retarget_printf.c"
+                if rt.exists():
+                    rt.unlink()
 
         # 7. Generate .uvprojx from template
         uvprojx_template = self._templates_dir / family_lower / "uvprojx_template.xml"
@@ -106,6 +119,10 @@ class ProjectGenerator:
         startup = chip_config.get("startup", "")
         flash_driver = chip_config.get("flash_driver", "")
         device_define = chip_config.get("define", "")
+        ram_kb = chip_config.get("ram_kb", 20)
+        flash_kb = chip_config.get("flash_kb", 64)
+        ram_start = int(config.get("ram_start", "0x20000000"), 16)
+        rom_start = int(config.get("rom_start", "0x08000000"), 16)
         return {
             "PROJECT_NAME": project_name,
             "CHIP": chip_config.get("device", chip_name),
@@ -114,9 +131,12 @@ class ProjectGenerator:
             "DEVICE_DEFINE": device_define,
             "CPU_TYPE": config.get("cpu_type", ""),
             "RAM_START": config.get("ram_start", ""),
-            "RAM_SIZE": self._kb_to_hex(chip_config.get("ram_kb", 20)),
+            "RAM_SIZE": self._kb_to_hex(ram_kb),
+            "RAM_START_END": f"0x{ram_start + ram_kb * 1024 - 1:X}",
             "ROM_START": config.get("rom_start", ""),
-            "ROM_SIZE": self._kb_to_hex(chip_config.get("flash_kb", 64)),
+            "ROM_SIZE": self._kb_to_hex(flash_kb),
+            "ROM_START_END": f"0x{rom_start + flash_kb * 1024 - 1:X}",
+            "ROM_SIZE_KB": self._kb_to_hex(flash_kb),
             "CLOCK": config.get("clock", ""),
             "CPU_FLAGS": config.get("cpu_flags", ""),
             "SIM_DLL": config.get("sim_dll", ""),

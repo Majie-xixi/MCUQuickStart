@@ -28,13 +28,20 @@ class SDKManager:
         return self._paths.get(vendor, "")
 
     def resolve_sdk(self, sdk_root: str, sdk_subdir: str) -> str | None:
-        """Find SDK directory by name prefix under the SDK root directory."""
+        """Find SDK directory by name prefix under the SDK root (searches up to 2 levels)."""
         base = Path(sdk_root)
         if not base.is_dir():
             return None
+        # Level 1: direct children
         for entry in base.iterdir():
             if entry.is_dir() and entry.name.lower().startswith(sdk_subdir.lower()):
                 return str(entry)
+        # Level 2: grandchildren (e.g. stsw-stm32054/STM32F10x_StdPeriph_Lib_V3.6.0)
+        for entry in base.iterdir():
+            if entry.is_dir():
+                for sub in entry.iterdir():
+                    if sub.is_dir() and sub.name.lower().startswith(sdk_subdir.lower()):
+                        return str(sub)
         return None
 
     def find_file(self, sdk_root: Path, relative_path: str) -> Path | None:
@@ -76,9 +83,11 @@ class SDKManager:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(src.read_bytes())
 
-        # Copy device include headers (gd32f10x.h, system_gd32f10x.h)
+        # Copy device include headers
         device_path = cmsis["device_path"]
         sdk_dev_inc = self._find_dir(sdk_base, f"{device_path}/Include")
+        if not sdk_dev_inc:
+            sdk_dev_inc = self._find_dir(sdk_base, device_path)  # STM32: flat, no Include/
         dest_dev_inc = dest_dir / "CMSIS" / device_path / "Include"
         dest_dev_inc.mkdir(parents=True, exist_ok=True)
         if sdk_dev_inc:
@@ -88,6 +97,8 @@ class SDKManager:
         # Copy system source
         system_file = cmsis["system_source"]
         system_src = self.find_file(sdk_base, f"{device_path}/Source/{system_file}")
+        if not system_src:
+            system_src = self.find_file(sdk_base, f"{device_path}/{system_file}")
         if system_src:
             dest = dest_dir / "CMSIS" / device_path / "Source" / system_file
             dest.parent.mkdir(parents=True, exist_ok=True)
