@@ -7,6 +7,7 @@
     "sdk_subdir": "STM32F10x_StdPeriph_Lib",
     "pack_id": "Keil.STM32F1xx_DFP.2.4.1",
     "device_header": "stm32f10x.h",
+    "common_skip": ["retarget_printf.c"],
     "cmsis": {
       "core_headers": ["core_cm3.h", "core_cmFunc.h", "core_cmInstr.h"],
       "device_path": "Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x",

@@ -79,10 +79,11 @@ class ProjectGenerator:
         # 4. Copy our custom USER templates (debug_print, retarget_printf, RTE_Components)
         user_dir = output_dir / "USER"
         user_dir.mkdir(parents=True, exist_ok=True)
+        skip_files = set(chip_config.get("common_skip", []))
         global_common = self._templates_dir / "common"
         if global_common.exists():
             for src_file in global_common.iterdir():
-                if src_file.is_file():
+                if src_file.is_file() and src_file.name not in skip_files:
                     render(src_file, user_dir / src_file.name, cv)
 
         # 5. Copy chip-specific USER files from SDK Template directory
