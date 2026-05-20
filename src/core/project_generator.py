@@ -29,6 +29,7 @@ class ProjectGenerator:
             "DEVICE_HEADER": chip_config.get("device_header", ""),
             "CHIP_FAMILY": chip_config.get("family", ""),
             "DEVICE_DEFINE": chip_config.get("device_define", ""),
+            "DEBUG_USART": chip_config.get("debug_usart", "USART0"),
         }
 
     def generate(self, family_name: str, chip_name: str, chip_config: dict,

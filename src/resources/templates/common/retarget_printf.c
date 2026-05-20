@@ -21,16 +21,16 @@ int _write(int file, char *ptr, int len)
 {
     for (int i = 0; i < len; i++)
     {
-        usart_data_transmit(USART2, (uint8_t)ptr[i]);
-        while (RESET == usart_flag_get(USART2, USART_FLAG_TBE));
+        usart_data_transmit({{DEBUG_USART}}, (uint8_t)ptr[i]);
+        while (RESET == usart_flag_get({{DEBUG_USART}}, USART_FLAG_TBE));
     }
     return len;
 }
 #else
 int fputc(int ch, FILE *f)
 {
-    usart_data_transmit(USART2, (uint8_t)ch);
-    while (RESET == usart_flag_get(USART2, USART_FLAG_TBE));
+    usart_data_transmit({{DEBUG_USART}}, (uint8_t)ch);
+    while (RESET == usart_flag_get({{DEBUG_USART}}, USART_FLAG_TBE));
     return ch;
 }
 #endif
