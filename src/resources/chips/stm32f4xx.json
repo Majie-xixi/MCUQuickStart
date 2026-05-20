@@ -8,6 +8,7 @@
     "pack_id": "Keil.STM32F4xx_DFP.2.17.1",
     "device_header": "stm32f4xx.h",
     "conf_header": "stm32f4xx_conf.h",
+    "debug_usart": "USART1",
     "common_skip": ["retarget_printf.c"],
     "cmsis": {
       "core_headers": ["core_cm4.h", "core_cmSimd.h", "core_cmFunc.h", "core_cmInstr.h"],
@@ -73,7 +74,8 @@
         "ram_kb": 256,
         "flash_kb": 1024,
         "startup": "startup_stm32f429_439xx.s",
-        "flash_driver": "STM32F4xx_1M"
+        "flash_driver": "STM32F4xx_1M",
+        "fwlib_exclude": ["stm32f4xx_fsmc.c", "stm32f4xx_fsmc.h"]
       },
       "STM32F429ZGT6": {
         "device": "STM32F429ZG",
@@ -81,7 +83,8 @@
         "ram_kb": 256,
         "flash_kb": 1024,
         "startup": "startup_stm32f429_439xx.s",
-        "flash_driver": "STM32F4xx_1M"
+        "flash_driver": "STM32F4xx_1M",
+        "fwlib_exclude": ["stm32f4xx_fsmc.c", "stm32f4xx_fsmc.h"]
       }
     }
   }

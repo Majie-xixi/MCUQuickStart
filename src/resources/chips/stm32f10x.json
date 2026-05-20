@@ -8,6 +8,7 @@
     "pack_id": "Keil.STM32F1xx_DFP.2.4.1",
     "device_header": "stm32f10x.h",
     "conf_header": "stm32f10x_conf.h",
+    "debug_usart": "USART1",
     "common_skip": ["retarget_printf.c"],
     "cmsis": {
       "core_headers": ["core_cm3.h", "core_cmFunc.h", "core_cmInstr.h"],
