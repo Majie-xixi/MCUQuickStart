@@ -2,6 +2,7 @@
 #include "{{CONF_HEADER}}"
 #include "main.h"
 #include "systick.h"
+#include "delay.h"
 
 void led_init(void)
 {
