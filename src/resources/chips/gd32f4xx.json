@@ -126,7 +126,7 @@
       "GD32F470ZET6": {
         "device": "GD32F470ZE",
         "define": "GD32F470",
-        "ram_kb": 512,
+        "ram_kb": 256,
         "flash_kb": 512,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_512K"
