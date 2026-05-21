@@ -22,6 +22,8 @@ void led_task(void *pvParameters)
     }
 }
 
+void nvic_config(void);
+
 int main(void)
 {
     systick_config();
