@@ -6,6 +6,7 @@
 #if SYSTEM_SUPPORT_OS == 2
 #include "FreeRTOS.h"
 #include "task.h"
+extern void xPortSysTickHandler(void);
 #endif
 
 void nvic_config(void)
