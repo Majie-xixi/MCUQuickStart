@@ -41,6 +41,13 @@ void uart_init(void)
     USART_Cmd({{DEBUG_USART}}, ENABLE);
 }
 
+int fputc(int ch, FILE *f)
+{
+    USART_SendData({{DEBUG_USART}}, (uint8_t)ch);
+    while (USART_GetFlagStatus({{DEBUG_USART}}, USART_FLAG_TC) == RESET);
+    return ch;
+}
+
 void uart_task(void *pvParameters)
 {
     printf("Hello from FreeRTOS on {{DEVICE_HEADER}}\r\n");
