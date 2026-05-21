@@ -2,7 +2,6 @@
 #include "{{CONF_HEADER}}"
 #include "main.h"
 #include "systick.h"
-#include "delay.h"
 
 void led_init(void)
 {
@@ -16,8 +15,8 @@ int main(void)
     led_init();
     while (1) {
         gpio_bit_set(GPIOA, GPIO_PIN_0);
-        delay_ms(500);
+        delay_1ms(500);
         gpio_bit_reset(GPIOA, GPIO_PIN_0);
-        delay_ms(500);
+        delay_1ms(500);
     }
 }
