@@ -336,9 +336,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--diag_suppress=47</MiscControls>
-              <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}</Define>
+              <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}{{HXTAL_DEFINES}}</Define>
               <Undefine></Undefine>
-              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Source\Templates\arm;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys</IncludePath>
+              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Include;..\CMSIS\Libraries\CMSIS\Device\ST\STM32F4xx\Source\Templates\arm;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys{{FREERTOS_INCLUDES}}</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -479,6 +479,7 @@
         <Group>
           <GroupName>APP</GroupName>
         </Group>
+{{FREERTOS_GROUPS}}
       </Groups>
     </Target>
   </Targets>

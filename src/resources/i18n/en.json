@@ -25,5 +25,10 @@
   "err_chip_not_found": "Chip {chip} not found in database.",
   "select_sdk_root": "Select SDK Root",
   "select_output": "Select Output Directory",
-  "language": "Language"
+  "hxtal_freq": "HXTAL Freq:",
+  "language": "Language",
+  "help": "Help",
+  "help_text": "<h3>MCUQuickStart Usage</h3><ol><li><b>Set SDK Root</b>: Place all chip firmware packages (STM32/GD32) and optional libraries (FreeRTOS) in one directory. The tool auto-matches them.</li><li><b>Select Chip</b>: Choose the family first, then the specific model.</li><li><b>Project Name &amp; Output</b>: The project will be created in a subfolder under the output directory.</li><li><b>Choose Template</b>: Empty (main loop only), LED Blink, or UART Printf.</li><li><b>Optional Libs</b>: Check FreeRTOS to generate an RTOS-enabled project.</li><li><b>Generate</b>: Open the generated .uvprojx in Keil MDK, compile and run.</li></ol>",
+  "optional_libs": "Optional Libraries",
+  "lib_freertos": "FreeRTOS (Real-Time OS)"
 }

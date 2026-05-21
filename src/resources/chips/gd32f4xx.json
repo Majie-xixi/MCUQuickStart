@@ -9,6 +9,18 @@
     "conf_header": "gd32f4xx_libopt.h",
     "use_stdperiph_driver": true,
     "sdk_subdir": "GD32F4xx_Firmware_Library",
+    "optional_libs": {
+      "freertos": {
+        "sdk_subdir": "FreeRTOS",
+        "heap": "heap_4.c",
+        "core_files": ["croutine.c", "event_groups.c", "list.c", "queue.c", "stream_buffer.c", "tasks.c", "timers.c"],
+        "port_map": {
+          "Cortex-M3": "portable/RVDS/ARM_CM3",
+          "Cortex-M4": "portable/RVDS/ARM_CM4F"
+        },
+        "systick_clock_div": 1
+      }
+    },
     "cmsis": {
       "core_headers": ["core_cm4.h", "core_cm4_simd.h", "core_cmFunc.h", "core_cmInstr.h"],
       "device_path": "GD/GD32F4xx",
@@ -23,6 +35,7 @@
       "cpu_type": "Cortex-M4",
       "cpu_flags": "FPU2",
       "clock": "12000000",
+      "hxtal_hz": 8000000,
       "sim_dll": "SARMCM3.DLL",
       "target_dll": "SARMCM3.DLL",
       "sim_dlg_dll": "DCM.DLL",
@@ -99,6 +112,46 @@
         "device": "GD32F450II",
         "define": "GD32F450",
         "ram_kb": 256,
+        "flash_kb": 2048,
+        "startup": "startup_gd32f450_470.s",
+        "flash_driver": "GD32F4xx_2MB"
+      },
+      "GD32F470VGT6": {
+        "device": "GD32F470VG",
+        "define": "GD32F470",
+        "ram_kb": 512,
+        "flash_kb": 1024,
+        "startup": "startup_gd32f450_470.s",
+        "flash_driver": "GD32F4xx_1MB"
+      },
+      "GD32F470ZET6": {
+        "device": "GD32F470ZE",
+        "define": "GD32F470",
+        "ram_kb": 256,
+        "flash_kb": 512,
+        "startup": "startup_gd32f450_470.s",
+        "flash_driver": "GD32F4xx_512K"
+      },
+      "GD32F470ZGT6": {
+        "device": "GD32F470ZG",
+        "define": "GD32F470",
+        "ram_kb": 512,
+        "flash_kb": 1024,
+        "startup": "startup_gd32f450_470.s",
+        "flash_driver": "GD32F4xx_1MB"
+      },
+      "GD32F470ZIT6": {
+        "device": "GD32F470ZI",
+        "define": "GD32F470",
+        "ram_kb": 512,
+        "flash_kb": 2048,
+        "startup": "startup_gd32f450_470.s",
+        "flash_driver": "GD32F4xx_2MB"
+      },
+      "GD32F470IIH6": {
+        "device": "GD32F470II",
+        "define": "GD32F470",
+        "ram_kb": 512,
         "flash_kb": 2048,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_2MB"

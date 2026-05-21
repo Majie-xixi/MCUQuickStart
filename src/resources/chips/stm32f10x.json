@@ -5,6 +5,18 @@
     "vendor": "STMicroelectronics",
     "sdk_key": "SDK_ROOT",
     "sdk_subdir": "STM32F10x_StdPeriph_Lib",
+    "optional_libs": {
+      "freertos": {
+        "sdk_subdir": "FreeRTOS",
+        "heap": "heap_4.c",
+        "core_files": ["croutine.c", "event_groups.c", "list.c", "queue.c", "stream_buffer.c", "tasks.c", "timers.c"],
+        "port_map": {
+          "Cortex-M3": "portable/RVDS/ARM_CM3",
+          "Cortex-M4": "portable/RVDS/ARM_CM4F"
+        },
+        "systick_clock_div": 8
+      }
+    },
     "pack_id": "Keil.STM32F1xx_DFP.2.4.1",
     "device_header": "stm32f10x.h",
     "conf_header": "stm32f10x_conf.h",
@@ -24,6 +36,7 @@
       "rom_start": "0x08000000",
       "cpu_type": "Cortex-M3",
       "clock": "8000000",
+      "hxtal_hz": 8000000,
       "sim_dll": "SARMCM3.DLL",
       "target_dll": "SARMCM3.DLL",
       "sim_dlg_dll": "DCM.DLL",

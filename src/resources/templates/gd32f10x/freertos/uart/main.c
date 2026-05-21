@@ -3,6 +3,8 @@
 #include "main.h"
 #include "systick.h"
 #include "debug_print.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stdio.h>
 
 void uart_init(void)
@@ -23,13 +25,25 @@ void uart_init(void)
     usart_enable({{DEBUG_USART}});
 }
 
+void uart_task(void *pvParameters)
+{
+    printf("Hello from FreeRTOS on {{DEVICE_HEADER}}\r\n");
+    while (1)
+    {
+        vTaskDelay(1000);
+        printf("tick\r\n");
+    }
+}
+
 int main(void)
 {
     systick_config();
+    nvic_config();
     uart_init();
-    printf("Hello from {{DEVICE_HEADER}}\r\n");
+
+    xTaskCreate(uart_task, "uart_task", 256, NULL, 2, NULL);
+    vTaskStartScheduler();
+
     while (1) {
-        delay_1ms(1000);
-        printf("tick\r\n");
     }
 }

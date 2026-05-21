@@ -339,9 +339,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}</Define>
+              <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}{{HXTAL_DEFINES}}</Define>
               <Undefine></Undefine>
-              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\GD\GD32F10x\Include;..\CMSIS\GD\GD32F10x\Source\ARM;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys</IncludePath>
+              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\GD\GD32F10x\Include;..\CMSIS\GD\GD32F10x\Source\ARM;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys{{FREERTOS_INCLUDES}}</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -484,6 +484,7 @@
         <Group>
           <GroupName>APP</GroupName>
         </Group>
+{{FREERTOS_GROUPS}}
       </Groups>
     </Target>
   </Targets>

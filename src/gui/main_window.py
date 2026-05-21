@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QComboBox, QPushButton,
     QTextEdit, QGroupBox, QRadioButton, QFileDialog, QMessageBox,
+    QCheckBox,
 )
 from PyQt6.QtCore import Qt
 from src.core.chip_db import ChipDatabase
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(680, 580)
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
-        self._i18n.set_language("zh")
+        self._i18n.set_language("en")
 
         self._sdk = SDKManager()
         self._sdk.load_config()
@@ -43,14 +44,18 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
 
-        # --- Top bar: language selector ---
+        # --- Top bar: help button + language selector ---
         top = QHBoxLayout()
+        self._help_btn = QPushButton()
+        self._help_btn.setFixedWidth(80)
+        self._help_btn.clicked.connect(self._show_help)
+        top.addWidget(self._help_btn)
         top.addStretch()
         top.addWidget(QLabel(""))
         self._lang_label = top.itemAt(top.count() - 1).widget()
         self._lang_combo = QComboBox()
         self._lang_combo.addItems(["中文", "English"])
-        self._lang_combo.setCurrentText("中文")
+        self._lang_combo.setCurrentText("English")
         self._lang_combo.currentTextChanged.connect(self._on_lang_changed)
         top.addWidget(self._lang_combo)
         layout.addLayout(top)
@@ -107,6 +112,16 @@ class MainWindow(QMainWindow):
         row3.addWidget(self._out_btn)
         proj_layout.addLayout(row3)
 
+        row4 = QHBoxLayout()
+        self._hxtal_label = QLabel()
+        row4.addWidget(self._hxtal_label)
+        self._hxtal_combo = QComboBox()
+        self._hxtal_combo.addItems(["8 MHz", "25 MHz"])
+        self._hxtal_combo.setCurrentText("8 MHz")
+        row4.addWidget(self._hxtal_combo)
+        row4.addStretch()
+        proj_layout.addLayout(row4)
+
         layout.addWidget(self._proj_group)
 
         # --- Template Choice ---
@@ -120,6 +135,13 @@ class MainWindow(QMainWindow):
         tmpl_layout.addWidget(self._tmpl_led)
         tmpl_layout.addWidget(self._tmpl_uart)
         layout.addWidget(self._tmpl_group)
+
+        # --- Optional Libraries ---
+        self._lib_group = QGroupBox()
+        lib_layout = QVBoxLayout(self._lib_group)
+        self._lib_freertos = QCheckBox()
+        lib_layout.addWidget(self._lib_freertos)
+        layout.addWidget(self._lib_group)
 
         # --- Generate Button ---
         self._gen_btn = QPushButton()
@@ -155,6 +177,14 @@ class MainWindow(QMainWindow):
         self._tmpl_uart.setText(self._tr("tmpl_uart"))
         self._gen_btn.setText(self._tr("generate"))
         self._log_group.setTitle(self._tr("log"))
+        self._lib_group.setTitle(self._tr("optional_libs"))
+        self._lib_freertos.setText(self._tr("lib_freertos"))
+        self._help_btn.setText(self._tr("help"))
+        self._hxtal_label.setText(self._tr("hxtal_freq"))
+
+    # ── Help ─────────────────────────────────────────────────────
+    def _show_help(self):
+        QMessageBox.information(self, self._tr("help"), self._tr("help_text"))
 
     # ── Language switch ──────────────────────────────────────────
     def _on_lang_changed(self, text: str):
@@ -212,16 +242,29 @@ class MainWindow(QMainWindow):
                                 self._tr("err_chip_not_found", chip=chip))
             return
 
+        hxtal_text = self._hxtal_combo.currentText()
+        hxtal_mhz = int(hxtal_text.split()[0])
+        chip_config = dict(chip_config)  # shallow copy to avoid mutating cache
+        if "config" not in chip_config:
+            chip_config["config"] = {}
+        chip_config["config"] = dict(chip_config["config"])
+        chip_config["config"]["hxtal_hz"] = hxtal_mhz * 1000000
+
         tmpl_type = "empty"
         if self._tmpl_led.isChecked():
             tmpl_type = "led"
         elif self._tmpl_uart.isChecked():
             tmpl_type = "uart"
 
+        optional_libs = []
+        if self._lib_freertos.isChecked():
+            optional_libs.append("freertos")
+
         try:
             output_path = output_dir / proj_name
             self._log_msg(self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type))
-            self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type)
+            self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type,
+                               optional_libs=optional_libs)
             self._log_msg(self._tr("done", path=str(output_path)))
             QMessageBox.information(self, self._tr("success"),
                                     f"{output_path}")
