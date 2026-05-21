@@ -1,6 +1,7 @@
 #include "gd32f10x_it.h"
 #include "main.h"
 #include "systick.h"
+#include "sysconfig.h"
 
 #if SYSTEM_SUPPORT_OS == 2
 #include "FreeRTOS.h"

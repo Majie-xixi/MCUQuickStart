@@ -1,4 +1,5 @@
 #include "delay.h"
+#include "sysconfig.h"
 
 static uint16_t g_fac_us = 72 * 5;
 
