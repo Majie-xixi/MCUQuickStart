@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QComboBox, QPushButton,
     QTextEdit, QGroupBox, QRadioButton, QFileDialog, QMessageBox,
+    QCheckBox,
 )
 from PyQt6.QtCore import Qt
 from src.core.chip_db import ChipDatabase
@@ -121,6 +122,13 @@ class MainWindow(QMainWindow):
         tmpl_layout.addWidget(self._tmpl_uart)
         layout.addWidget(self._tmpl_group)
 
+        # --- Optional Libraries ---
+        self._lib_group = QGroupBox()
+        lib_layout = QVBoxLayout(self._lib_group)
+        self._lib_freertos = QCheckBox()
+        lib_layout.addWidget(self._lib_freertos)
+        layout.addWidget(self._lib_group)
+
         # --- Generate Button ---
         self._gen_btn = QPushButton()
         self._gen_btn.setMinimumHeight(36)
@@ -155,6 +163,8 @@ class MainWindow(QMainWindow):
         self._tmpl_uart.setText(self._tr("tmpl_uart"))
         self._gen_btn.setText(self._tr("generate"))
         self._log_group.setTitle(self._tr("log"))
+        self._lib_group.setTitle(self._tr("optional_libs"))
+        self._lib_freertos.setText(self._tr("lib_freertos"))
 
     # ── Language switch ──────────────────────────────────────────
     def _on_lang_changed(self, text: str):
@@ -218,10 +228,15 @@ class MainWindow(QMainWindow):
         elif self._tmpl_uart.isChecked():
             tmpl_type = "uart"
 
+        optional_libs = []
+        if self._lib_freertos.isChecked():
+            optional_libs.append("freertos")
+
         try:
             output_path = output_dir / proj_name
             self._log_msg(self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type))
-            self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type)
+            self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type,
+                               optional_libs=optional_libs)
             self._log_msg(self._tr("done", path=str(output_path)))
             QMessageBox.information(self, self._tr("success"),
                                     f"{output_path}")

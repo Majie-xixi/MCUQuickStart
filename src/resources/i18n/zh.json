@@ -25,5 +25,7 @@
   "err_chip_not_found": "芯片 {chip} 未在数据库中找到。",
   "select_sdk_root": "选择SDK根目录",
   "select_output": "选择输出目录",
-  "language": "语言"
+  "language": "语言",
+  "optional_libs": "可选库",
+  "lib_freertos": "FreeRTOS (实时操作系统)"
 }

@@ -25,5 +25,7 @@
   "err_chip_not_found": "Chip {chip} not found in database.",
   "select_sdk_root": "Select SDK Root",
   "select_output": "Select Output Directory",
-  "language": "Language"
+  "language": "Language",
+  "optional_libs": "Optional Libraries",
+  "lib_freertos": "FreeRTOS (Real-Time OS)"
 }
