@@ -107,13 +107,17 @@ class ProjectGenerator:
         if config_tmpl.exists():
             render(config_tmpl, inc_dst / "FreeRTOSConfig.h", cv)
 
-        # Overwrite it.c with FreeRTOS version
+        # Overwrite it.c and main.h with FreeRTOS versions
         family_lower = chip_config.get("family", "").lower()
+        user_dir = output_dir / "USER"
+
         itc_tmpl = self._templates_dir / "freertos" / f"{family_lower}_it.c"
         if itc_tmpl.exists():
-            user_dir = output_dir / "USER"
-            itc_name = f"{family_lower}_it.c"
-            render(itc_tmpl, user_dir / itc_name, cv)
+            render(itc_tmpl, user_dir / f"{family_lower}_it.c", cv)
+
+        main_h_tmpl = self._templates_dir / "freertos" / f"{family_lower}_main.h"
+        if main_h_tmpl.exists():
+            render(main_h_tmpl, user_dir / "main.h", cv)
 
     def generate(self, family_name: str, chip_name: str, chip_config: dict,
                  project_name: str, output_dir: Path, template_type: str,
