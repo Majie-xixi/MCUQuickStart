@@ -35,7 +35,7 @@
       "cpu_type": "Cortex-M4",
       "cpu_flags": "FPU2",
       "clock": "12000000",
-      "hxtal_hz": 25000000,
+      "hxtal_hz": 8000000,
       "sim_dll": "SARMCM3.DLL",
       "target_dll": "SARMCM3.DLL",
       "sim_dlg_dll": "DCM.DLL",

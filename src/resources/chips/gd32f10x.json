@@ -34,6 +34,7 @@
       "rom_start": "0x08000000",
       "cpu_type": "Cortex-M3",
       "clock": "12000000",
+      "hxtal_hz": 8000000,
       "sim_dll": "SARMCM3.DLL",
       "target_dll": "SARMCM3.DLL",
       "sim_dlg_dll": "DCM.DLL",

@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
         row4.addWidget(self._hxtal_label)
         self._hxtal_combo = QComboBox()
         self._hxtal_combo.addItems(["8 MHz", "12 MHz", "16 MHz", "25 MHz"])
-        self._hxtal_combo.setCurrentText("25 MHz")
+        self._hxtal_combo.setCurrentText("8 MHz")
         row4.addWidget(self._hxtal_combo)
         row4.addStretch()
         proj_layout.addLayout(row4)
