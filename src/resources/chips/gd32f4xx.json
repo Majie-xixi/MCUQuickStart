@@ -118,7 +118,7 @@
       "GD32F470VGT6": {
         "device": "GD32F470VG",
         "define": "GD32F470",
-        "ram_kb": 256,
+        "ram_kb": 512,
         "flash_kb": 1024,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_1MB"
@@ -126,7 +126,7 @@
       "GD32F470ZET6": {
         "device": "GD32F470ZE",
         "define": "GD32F470",
-        "ram_kb": 256,
+        "ram_kb": 512,
         "flash_kb": 512,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_512K"
@@ -134,7 +134,7 @@
       "GD32F470ZGT6": {
         "device": "GD32F470ZG",
         "define": "GD32F470",
-        "ram_kb": 256,
+        "ram_kb": 512,
         "flash_kb": 1024,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_1MB"
@@ -142,7 +142,7 @@
       "GD32F470ZIT6": {
         "device": "GD32F470ZI",
         "define": "GD32F470",
-        "ram_kb": 256,
+        "ram_kb": 512,
         "flash_kb": 2048,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_2MB"
@@ -150,7 +150,7 @@
       "GD32F470IIH6": {
         "device": "GD32F470II",
         "define": "GD32F470",
-        "ram_kb": 256,
+        "ram_kb": 512,
         "flash_kb": 2048,
         "startup": "startup_gd32f450_470.s",
         "flash_driver": "GD32F4xx_2MB"
