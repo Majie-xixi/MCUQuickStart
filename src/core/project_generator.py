@@ -140,12 +140,7 @@ class ProjectGenerator:
                 f"Please download the {chip_config.get('family', '')} firmware library package.")
         self._sdk.copy_firmware(Path(sdk_path), chip_config, output_dir)
 
-        # 2. Patch system clock if HXTAL differs from SDK default
-        config = chip_config.get("config", {})
-        if "hxtal_hz" in config:
-            self._patch_system_clock(output_dir, family_lower, config["hxtal_hz"])
-
-        # 3. Create empty user directories
+        # 2. Create empty user directories
         for d in ["APP", "DRIVER", "HARDWARE"]:
             (output_dir / d).mkdir(exist_ok=True)
 
@@ -178,7 +173,12 @@ class ProjectGenerator:
         if sdk_path:
             self._copy_sdk_templates(Path(sdk_path), user_dir, chip_config)
 
-        # 6. Setup FreeRTOS if enabled (after SDK templates to overwrite it.c)
+        # 6. Patch system clock after ALL SDK files are copied (both CMSIS and USER copies)
+        config = chip_config.get("config", {})
+        if "hxtal_hz" in config:
+            self._patch_system_clock(output_dir, family_lower, config["hxtal_hz"])
+
+        # 7. Setup FreeRTOS if enabled (after SDK templates to overwrite it.c)
         if use_freertos:
             self._setup_freertos(output_dir, chip_config, cv)
 
@@ -210,18 +210,22 @@ class ProjectGenerator:
         system_files = list(output_dir.rglob(f"system_{family_lower}.c"))
         if not system_files:
             return
-        system_file = system_files[0]
-        content = system_file.read_text(encoding="utf-8", errors="replace")
-
         hxtal_mhz = hxtal_hz // 1000000
         target_suffix = f"{hxtal_mhz}M"
         import re
-        # Only replace in #define lines, not in #if/#elif conditions
-        content = re.sub(
-            r'^(#define\s+__SYSTEM_CLOCK_\d+M_PLL)_\d+M(_HXTAL\s+)',
-            rf'\1_{target_suffix}\2',
-            content, flags=re.MULTILINE)
-        system_file.write_text(content, encoding="utf-8")
+        for system_file in system_files:
+            content = system_file.read_text(encoding="utf-8", errors="replace")
+            # Fix GD32F4xx: __SYSTEM_CLOCK_*_PLL_25M_HXTAL → _PLL_8M_HXTAL
+            content = re.sub(
+                r'^(#define\s+__SYSTEM_CLOCK_\d+M_PLL)_\d+M(_HXTAL\s+)',
+                rf'\1_{target_suffix}\2',
+                content, flags=re.MULTILINE)
+            # Fix STM32F4xx: PLL_M value must match HSE crystal frequency
+            content = re.sub(
+                r'^(\s*#define\s+PLL_M\s+)\d+',
+                rf'\g<1>{hxtal_mhz}',
+                content, flags=re.MULTILINE)
+            system_file.write_text(content, encoding="utf-8")
 
     @staticmethod
     def _kb_to_hex(kb: int) -> str:
