@@ -9,6 +9,18 @@
     "conf_header": "gd32f4xx_libopt.h",
     "use_stdperiph_driver": true,
     "sdk_subdir": "GD32F4xx_Firmware_Library",
+    "optional_libs": {
+      "freertos": {
+        "sdk_subdir": "FreeRTOS",
+        "heap": "heap_4.c",
+        "core_files": ["croutine.c", "event_groups.c", "list.c", "queue.c", "stream_buffer.c", "tasks.c", "timers.c"],
+        "port_map": {
+          "Cortex-M3": "portable/RVDS/ARM_CM3",
+          "Cortex-M4": "portable/RVDS/ARM_CM4F"
+        },
+        "systick_clock_div": 1
+      }
+    },
     "cmsis": {
       "core_headers": ["core_cm4.h", "core_cm4_simd.h", "core_cmFunc.h", "core_cmInstr.h"],
       "device_path": "GD/GD32F4xx",
