@@ -140,7 +140,12 @@ class ProjectGenerator:
                 f"Please download the {chip_config.get('family', '')} firmware library package.")
         self._sdk.copy_firmware(Path(sdk_path), chip_config, output_dir)
 
-        # 2. Create empty user directories
+        # 2. Patch system clock if HXTAL differs from SDK default
+        config = chip_config.get("config", {})
+        if "hxtal_hz" in config:
+            self._patch_system_clock(output_dir, family_lower, config["hxtal_hz"])
+
+        # 3. Create empty user directories
         for d in ["APP", "DRIVER", "HARDWARE"]:
             (output_dir / d).mkdir(exist_ok=True)
 
@@ -198,6 +203,25 @@ class ProjectGenerator:
             mdk_dir = output_dir / "MDK-ARM"
             mdk_dir.mkdir(parents=True, exist_ok=True)
             render(uvprojx_template, mdk_dir / f"{project_name}.uvprojx", variables)
+
+    @staticmethod
+    def _patch_system_clock(output_dir: Path, family_lower: str, hxtal_hz: int):
+        """Fix system_gd32f4xx.c / system_gd32f10x.c clock define to match actual HXTAL."""
+        system_files = list(output_dir.rglob(f"system_{family_lower}.c"))
+        if not system_files:
+            return
+        system_file = system_files[0]
+        content = system_file.read_text(encoding="utf-8")
+
+        hxtal_mhz = hxtal_hz // 1000000
+        target_suffix = f"{hxtal_mhz}M"
+        import re
+        # Only replace in #define lines, not in #if/#elif conditions
+        content = re.sub(
+            r'^(#define\s+__SYSTEM_CLOCK_\d+M_PLL)_\d+M(_HXTAL\s+)',
+            rf'\1_{target_suffix}\2',
+            content, flags=re.MULTILINE)
+        system_file.write_text(content, encoding="utf-8")
 
     @staticmethod
     def _kb_to_hex(kb: int) -> str:
