@@ -1,25 +1,6 @@
 #include "delay.h"
 #include "sysconfig.h"
 
-/* CMSIS v1 compatibility: old SPL (STM32F10x) has no DWT struct */
-#if !defined(DWT)
-typedef struct {
-    volatile uint32_t CTRL;
-    volatile uint32_t CYCCNT;
-    volatile uint32_t CPICNT;
-    volatile uint32_t EXCCNT;
-    volatile uint32_t SLEEPCNT;
-    volatile uint32_t LSUCNT;
-    volatile uint32_t FOLDCNT;
-    volatile uint32_t PCSR;
-} DWT_Type;
-#define DWT_BASE  0xE0001000UL
-#define DWT       ((DWT_Type *) DWT_BASE)
-#ifndef DWT_CTRL_CYCCNTENA_Msk
-#define DWT_CTRL_CYCCNTENA_Msk  (1UL << 0)
-#endif
-#endif
-
 static uint16_t g_fac_us = 72 * 5;
 
 #if SYSTEM_SUPPORT_OS == 2  /* FreeRTOS */
