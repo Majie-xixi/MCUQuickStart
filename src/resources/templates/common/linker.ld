@@ -3,12 +3,13 @@ MEMORY
 {
   FLASH (rx)      : ORIGIN = {{ROM_START}}, LENGTH = {{ROM_SIZE}}
   RAM (xrw)       : ORIGIN = {{RAM_START}}, LENGTH = {{RAM_SIZE}}
+{{TCMRAM_MEMORY}}
 }
 
 ENTRY(Reset_Handler)
 
-__stack_size = DEFINED(__stack_size) ? __stack_size : 1K;
-__heap_size = DEFINED(__heap_size) ? __heap_size : 512;
+__stack_size = DEFINED(__stack_size) ? __stack_size : 2K;
+__heap_size = DEFINED(__heap_size) ? __heap_size : 1K;
 
 SECTIONS
 {
@@ -128,6 +129,8 @@ SECTIONS
     PROVIDE( _sp = . );
     . = ALIGN(8);
   } > RAM
+
+{{TCMRAM_SECTION}}
 }
 
 /* input sections */

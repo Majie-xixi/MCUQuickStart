@@ -276,6 +276,22 @@ class ProjectGenerator:
             elif "STM32" in family:
                 hxtal_defines = f"HSE_VALUE={hxtal_hz}"
 
+        # TCMRAM for Cortex-M4 (GD32F4xx has 64KB at 0x10000000)
+        is_m4 = "Cortex-M4" in cpu_type
+        tcmram_memory = "  TCMRAM (xrw)   : ORIGIN = 0x10000000, LENGTH = 64K\n" if is_m4 else ""
+        tcmram_section = (
+            '  _sitcmram = LOADADDR(.tcmram);\n'
+            '  .tcmram :\n'
+            '  {\n'
+            '    . = ALIGN(4);\n'
+            '    .stcmram = .;\n'
+            '    *(.tcmram)\n'
+            '    *(.tcmram*)\n'
+            '    . = ALIGN(4);\n'
+            '    _etcmram = .;\n'
+            '  } > TCMRAM AT> FLASH\n'
+        ) if is_m4 else ""
+
         variables = {
             "PROJECT_NAME": project_name,
             "MCPU": gcc_cpu,
@@ -289,6 +305,8 @@ class ProjectGenerator:
             "RAM_SIZE": self._kb_to_hex(ram_kb),
             "ROM_START": config.get("rom_start", "0x08000000"),
             "ROM_SIZE": self._kb_to_hex(flash_kb),
+            "TCMRAM_MEMORY": tcmram_memory,
+            "TCMRAM_SECTION": tcmram_section,
         }
 
         if use_freertos:
@@ -326,23 +344,60 @@ class ProjectGenerator:
         if cmake_template.exists():
             render(cmake_template, output_dir / "CMakeLists.txt", variables)
 
-        # GCC startup file: SDK already copied to STARTUP/ if available.
-        # If not found (e.g., GD32F10x SDK has no GCC dir), fall back to bundled templates.
+        # GCC startup: SDK's copy_firmware already copies to STARTUP/ if SDK has GCC dir.
+        # If missing, try to find from GD32 Embedded Builder in SDK root.
         startup_file = variables["STARTUP_FILE"]
         startup_dir = output_dir / "STARTUP"
         startup_dir.mkdir(parents=True, exist_ok=True)
         target = startup_dir / startup_file
         if not target.exists():
-            gcc_startup_src = self._templates_dir / "gcc_startup" / startup_file
-            if gcc_startup_src.exists():
-                shutil.copy2(gcc_startup_src, target)
-            else:
-                for f in (self._templates_dir / "gcc_startup").iterdir():
-                    if f.name.lower() == startup_file.lower():
-                        shutil.copy2(f, target)
-                        break
+            self._resolve_gcc_startup_from_sdk(output_dir, chip_config, startup_file)
 
-    def _gcc_freertos_port(self, output_dir: Path, chip_config: dict):
+        if not target.exists():
+            self._resolve_gcc_startup_from_sdk(output_dir, chip_config, startup_file)
+
+        if not target.exists():
+            family = chip_config.get("family", "")
+            raise FileNotFoundError(
+                f"GCC startup file '{startup_file}' not found.\n"
+                f"The {family} SDK does not include GCC startup files.\n"
+                f"Please download 'GD32 Embedded Builder' from gigadevice.com\n"
+                f"and place it in the SDK root directory, or ensure the SDK\n"
+                f"package includes 'GCC/' or 'gcc_ride7/' startup directory.")
+
+    def _resolve_gcc_startup_from_sdk(self, output_dir: Path, chip_config: dict,
+                                        startup_file: str):
+        """Search SDK root for GCC startup file (including GD32 Embedded Builder plugins)."""
+        sdk_root = Path(self._sdk.get_path("SDK_ROOT")) if self._sdk.get_path("SDK_ROOT") else None
+        if not sdk_root or not sdk_root.is_dir():
+            return
+
+        # Look for GCC startup in GD32 Embedded Builder plugins
+        for pattern in [
+            "GD32EmbeddedBuilder*/plugins/*/Firmware/gcc_startup/" + startup_file,
+            "GD32EmbeddedBuilder*/plugins/*/Firmware/gcc_startup/" + startup_file.replace(".s", ".S"),
+        ]:
+            matches = list(sdk_root.glob(pattern))
+            if matches:
+                target = output_dir / "STARTUP" / startup_file
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(matches[0], target)
+                return
+
+        # Also search for any matching startup file in SDK root's gcc dirs
+        for ext in [".S", ".s"]:
+            alt_name = Path(startup_file).stem + ext
+            for gcc_dir_pattern in [
+                f"*/Source/GCC/{alt_name}",
+                f"*/startup/gcc_ride7/{alt_name}",
+                f"*/startup/TrueSTUDIO/{alt_name}",
+            ]:
+                matches = list(sdk_root.glob(gcc_dir_pattern))
+                if matches:
+                    target = output_dir / "STARTUP" / startup_file
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(matches[0], target)
+                    return
         """Copy GCC FreeRTOS port files (separate from ARMCC/RVDS port)."""
         fr_cfg = chip_config.get("optional_libs", {}).get("freertos", {})
         core_name = chip_config.get("core", "Cortex-M3")
