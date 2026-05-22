@@ -2,7 +2,9 @@
 #include <stdio.h>
 
 
+#ifndef __GNUC__
 #pragma import(__use_no_semihosting)
+#endif
               
 struct __FILE {
     int handle;

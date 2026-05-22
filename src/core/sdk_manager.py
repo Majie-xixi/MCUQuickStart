@@ -136,3 +136,44 @@ class SDKManager:
         if sdk_fw_src:
             for c_file in sdk_fw_src.glob("*.c"):
                 (dest_fw_src / c_file.name).write_bytes(c_file.read_bytes())
+
+        # Copy GCC startup files if SDK has them (as sibling of ARM startup dir)
+        self._copy_gcc_startup(sdk_base, cmsis, dest_dir, chip_config)
+
+    def _copy_gcc_startup(self, sdk_base: Path, cmsis: dict, dest_dir: Path, chip_config: dict):
+        """Copy GCC-compatible startup files from SDK (gcc_ride7/, GCC/, TrueSTUDIO/ dirs)."""
+        startup_rel = cmsis["startup_path"]
+        arm_startup_dir = self._find_dir(sdk_base, startup_rel)
+        if not arm_startup_dir:
+            return
+
+        # Look for GCC directories as siblings of the ARM startup dir
+        gcc_candidates = ["gcc_ride7", "GCC", "TrueSTUDIO"]
+        gcc_dir = None
+        parent = arm_startup_dir.parent
+        for name in gcc_candidates:
+            candidate = parent / name
+            if candidate.is_dir():
+                gcc_dir = candidate
+                break
+
+        if not gcc_dir:
+            return
+
+        # Copy to STARTUP/ directory for GCC use
+        gcc_dest = dest_dir / "STARTUP"
+        gcc_dest.mkdir(parents=True, exist_ok=True)
+        for f in gcc_dir.iterdir():
+            if f.is_file() and f.suffix.lower() in (".s", ".c") and f.name.startswith("startup"):
+                (gcc_dest / f.name).write_bytes(f.read_bytes())
+
+        # Also search GD32 Embedded Builder in SDK root for GCC startup files
+        sdk_root = Path(self.get_path("SDK_ROOT")) if self.get_path("SDK_ROOT") else None
+        if sdk_root and sdk_root.is_dir():
+            startup_file = chip_config.get("startup", "")
+            for ext in (startup_file, startup_file.replace(".s", ".S")):
+                for eb_dir in sdk_root.glob("GD32EmbeddedBuilder*"):
+                    if eb_dir.is_dir():
+                        for match in eb_dir.rglob(f"gcc_startup/{ext}"):
+                            (gcc_dest / startup_file).write_bytes(match.read_bytes())
+                            return

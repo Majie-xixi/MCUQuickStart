@@ -17,6 +17,20 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(680, 580)
+        self.setStyleSheet("""
+            QMainWindow { background: #f0f2f5; }
+            QGroupBox {
+                background: #ffffff; border: 1px solid #e0e4e8;
+                border-radius: 8px; margin-top: 8px; padding-top: 14px;
+            }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; }
+            QPushButton { border: 1px solid #d0d5dd; border-radius: 5px; padding: 5px 14px; background: #fafbfc; }
+            QPushButton:hover { background: #e8ecf0; }
+            QLineEdit { border: 1px solid #d0d5dd; border-radius: 4px; padding: 3px 6px; background: white; }
+            QComboBox { border: 1px solid #d0d5dd; border-radius: 4px; padding: 3px 8px; }
+            QComboBox QAbstractItemView { selection-background-color: #e0e8f0; }
+            QTextEdit { border-radius: 6px; font-family: "Consolas", monospace; }
+        """)
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
         self._i18n.set_language("en")
@@ -141,6 +155,8 @@ class MainWindow(QMainWindow):
         lib_layout = QVBoxLayout(self._lib_group)
         self._lib_freertos = QCheckBox()
         lib_layout.addWidget(self._lib_freertos)
+        self._lib_gcc = QCheckBox()
+        lib_layout.addWidget(self._lib_gcc)
         layout.addWidget(self._lib_group)
 
         # --- Generate Button ---
@@ -179,6 +195,7 @@ class MainWindow(QMainWindow):
         self._log_group.setTitle(self._tr("log"))
         self._lib_group.setTitle(self._tr("optional_libs"))
         self._lib_freertos.setText(self._tr("lib_freertos"))
+        self._lib_gcc.setText(self._tr("lib_gcc"))
         self._help_btn.setText(self._tr("help"))
         self._hxtal_label.setText(self._tr("hxtal_freq"))
 
@@ -260,11 +277,13 @@ class MainWindow(QMainWindow):
         if self._lib_freertos.isChecked():
             optional_libs.append("freertos")
 
+        build_system = "both" if self._lib_gcc.isChecked() else "keil"
+
         try:
             output_path = output_dir / proj_name
             self._log_msg(self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type))
             self._gen.generate(family, chip, chip_config, proj_name, output_path, tmpl_type,
-                               optional_libs=optional_libs)
+                               optional_libs=optional_libs, build_system=build_system)
             self._log_msg(self._tr("done", path=str(output_path)))
             QMessageBox.information(self, self._tr("success"),
                                     f"{output_path}")

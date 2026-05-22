@@ -1,13 +1,13 @@
 # MCUQuickStart
 
-嵌入式 MCU 工程模板一键生成工具。选择芯片型号，自动生成 Keil5 打开即编译的工程模板。
+嵌入式 MCU 工程模板一键生成工具。选择芯片型号，自动生成 Keil5 打开即编译 + CLion/VS Code GCC 编译的双兼容工程模板。
 
 ## 分支说明
 
 | 分支 | 内容 |
 |------|------|
-| **master** (v1.0.0) | 裸机模板，4 系列 37 型号，稳定发布版 |
-| **feature/freertos-integration** | 新增 FreeRTOS 可选库 + HXTAL 晶振配置 + 使用说明按钮 + 英文默认界面 + 多款 bug 修复 |
+| **master** (v1.1.0) | 裸机+FreeRTOS 可选库，HXTAL 晶振配置，4 系列 37 型号 |
+| **feature/gcc-cmake-support** | 新增 GCC+CMake 双构建支持（可选），模板 Keil/GCC 双兼容 |
 
 ## 支持芯片
 
@@ -32,9 +32,12 @@
 - `fwlib_exclude` 机制：芯片 JSON 可配置排除不兼容的固件源文件
 - 中英文界面切换
 - 预留 APP / DRIVER / HARDWARE 空目录
-- **（feature 分支）** FreeRTOS 可选库：勾选即生成 RTOS 工程，4 系列全支持
-- **（feature 分支）** 外部晶振选择：8MHz / 25MHz，自动适配 PLL 配置
-- **（feature 分支）** 使用说明按钮（中英文双语）
+- FreeRTOS 可选库：勾选即生成 RTOS 工程，4 系列全支持
+- 外部晶振选择：8MHz / 25MHz，自动适配 PLL 配置
+- 使用说明按钮（中英文双语）
+- **（feature 分支）** GCC + CMake 构建：勾选后额外生成 CMakeLists.txt + 链接脚本 + GCC 启动文件，项目同时支持 Keil MDK 和 CLion/VS Code 打开编译
+- **（feature 分支）** 链接脚本分 GD32/STM32 两套，向量段名/符号自动适配
+- **（feature 分支）** SDK 源文件 `-w` 隔离，用户代码 `-Wall` 保留，编译零警告
 
 ## 安装
 
@@ -50,10 +53,10 @@ python main.py
 
 1. 设置 SDK 路径（指向固件库根目录）
 2. 选择芯片系列和型号
-3. 选择代码模板（可选 FreeRTOS、外部晶振频率）
+3. 选择代码模板，可勾选 FreeRTOS、GCC+CMake、外部晶振频率
 4. 点击 "Generate Project"
 
-生成后的工程用 Keil5 打开 `MDK-ARM/<项目名>.uvprojx` 即可编译。
+Keil5 打开 `MDK-ARM/<项目名>.uvprojx`，CLion/VS Code 打开 `CMakeLists.txt` 即可编译。
 
 ## SDK 准备
 
