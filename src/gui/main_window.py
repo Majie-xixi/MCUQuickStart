@@ -18,29 +18,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setMinimumSize(680, 580)
         self.setStyleSheet("""
-            QMainWindow { background: #f0f2f5; }
-            QGroupBox {
-                background: #ffffff; border: 1px solid #e0e4e8;
-                border-radius: 8px; margin-top: 10px; padding: 16px 12px 12px 12px;
-                font-weight: bold; font-size: 13px;
-            }
-            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; }
-            QPushButton {
-                background: #4a90d9; color: white; border: none;
-                border-radius: 6px; padding: 7px 18px; font-size: 13px;
-            }
-            QPushButton:hover { background: #3a7bc8; }
-            QPushButton:pressed { background: #2a6bb8; }
-            QLineEdit, QComboBox {
-                border: 1px solid #d0d5dd; border-radius: 5px;
-                padding: 5px 10px; background: white; font-size: 13px;
-            }
-            QLineEdit:focus, QComboBox:focus { border-color: #4a90d9; }
-            QRadioButton, QCheckBox { spacing: 6px; font-size: 13px; }
-            QTextEdit {
-                border: 1px solid #e0e4e8; border-radius: 6px;
-                background: #fafbfc; font-family: "Consolas", monospace; font-size: 12px;
-            }
+            QGroupBox { border-radius: 6px; }
+            QPushButton { border-radius: 5px; padding: 5px 14px; }
+            QLineEdit, QComboBox { border-radius: 4px; padding: 3px 6px; }
+            QTextEdit { border-radius: 4px; font-family: "Consolas", monospace; }
         """)
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
