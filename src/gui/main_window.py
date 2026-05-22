@@ -18,10 +18,15 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setMinimumSize(680, 580)
         self.setStyleSheet("""
-            QGroupBox { border-radius: 6px; }
+            QMainWindow { background: #f0f2f5; }
+            QGroupBox {
+                background: #ffffff; border: 1px solid #e0e4e8;
+                border-radius: 8px; margin-top: 8px; padding-top: 14px;
+            }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; }
             QPushButton { border-radius: 5px; padding: 5px 14px; }
             QLineEdit, QComboBox { border-radius: 4px; padding: 3px 6px; }
-            QTextEdit { border-radius: 4px; font-family: "Consolas", monospace; }
+            QTextEdit { border-radius: 6px; font-family: "Consolas", monospace; }
         """)
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
