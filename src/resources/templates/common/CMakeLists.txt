@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.17)
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_VERSION 1)
 
+# Must be before project() to skip linking test
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
 project({{PROJECT_NAME}} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
-
-# Prevent CMake from running test compilations on host
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # CPU-specific flags
 add_compile_options(
