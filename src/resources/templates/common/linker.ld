@@ -17,10 +17,10 @@ SECTIONS
   .vectors :
   {
     . = ALIGN(4);
-    KEEP(*(.vectors))
+    KEEP(*(.isr_vector .vectors))
     . = ALIGN(4);
     __Vectors_End = .;
-    __Vectors_Size = __Vectors_End - __gVectors;
+    __Vectors_Size = __Vectors_End - {{VECTOR_TABLE}};
   } >FLASH
 
   /* text section, such as program code */

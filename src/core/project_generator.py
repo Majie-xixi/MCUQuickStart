@@ -307,6 +307,7 @@ class ProjectGenerator:
             "ROM_SIZE": self._kb_to_hex(flash_kb),
             "TCMRAM_MEMORY": tcmram_memory,
             "TCMRAM_SECTION": tcmram_section,
+            "VECTOR_TABLE": "g_pfnVectors" if "STM32" in chip_config.get("family", "") else "__gVectors",
         }
 
         if use_freertos:
@@ -339,16 +340,18 @@ class ProjectGenerator:
         if ld_template.exists():
             render(ld_template, output_dir / f"{project_name}.ld", variables)
 
-        # Generate filtered source file list (respects fwlib_exclude)
+        # Generate filtered source file list (respects fwlib_exclude, dedup by name)
         exclude_fwlib = set(chip_config.get("fwlib_exclude", []))
         c_sources = []
+        seen = set()
         for d, pattern in [("CMSIS", "**/*.c"), ("FIRMWARE/Source", "*.c"),
                            ("SYSTEM", "**/*.c"), ("USER", "*.c"),
                            ("APP", "*.c"), ("DRIVER", "*.c"), ("HARDWARE", "*.c")]:
             src_dir = output_dir / d
             if src_dir.is_dir():
                 for f in sorted(src_dir.glob(pattern)):
-                    if f.name not in exclude_fwlib:
+                    if f.name not in exclude_fwlib and f.name not in seen:
+                        seen.add(f.name)
                         rel = f.relative_to(output_dir).as_posix()
                         c_sources.append(f"    {rel}")
         variables["CMAKE_SOURCES"] = "\n".join(c_sources)

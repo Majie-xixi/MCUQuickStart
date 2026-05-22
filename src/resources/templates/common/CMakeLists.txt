@@ -22,7 +22,6 @@ add_compile_options(
     -fmessage-length=0
     -Wall
     -Wno-unused-function
-    -Wno-macro-redefined
 )
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
