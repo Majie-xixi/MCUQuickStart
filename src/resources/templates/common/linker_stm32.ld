@@ -14,13 +14,13 @@ __heap_size = DEFINED(__heap_size) ? __heap_size : 1K;
 SECTIONS
 {
   /* ISR vectors */
-  .vectors :
+  .isr_vector :
   {
     . = ALIGN(4);
-    KEEP(*(.isr_vector .vectors))
+    KEEP(*(.isr_vector))
     . = ALIGN(4);
     __Vectors_End = .;
-    __Vectors_Size = __Vectors_End - {{VECTOR_TABLE}};
+    __Vectors_Size = __Vectors_End - g_pfnVectors;
   } >FLASH
 
   /* text section, such as program code */

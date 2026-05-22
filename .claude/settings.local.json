@@ -50,7 +50,12 @@
       "Bash(ssh *)",
       "Bash(ssh-keygen *)",
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(r['name'], '-', r['language'] or 'N/A', '- stars:', r['stargazers_count']\\) for r in data]\")",
-      "Bash(xxd \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/sysconfig.c\")"
+      "Bash(xxd \"E:/MJ_Demo/Project_Tool/src/resources/templates/system/sysconfig.c\")",
+      "Bash(sed -i 's|KEEP\\(\\\\*\\(\\\\.isr_vector \\\\.vectors\\)\\)|KEEP\\(*\\(.isr_vector\\)\\)|g' linker_stm32.ld)",
+      "Bash(sed -i 's|{{VECTOR_TABLE}}|g_pfnVectors|g' linker_stm32.ld)",
+      "Bash(sed -i 's|\\\\.vectors :|.isr_vector :|g' linker_stm32.ld)",
+      "Bash(sed -i 's|KEEP\\(\\\\*\\(\\\\.isr_vector \\\\.vectors\\)\\)|KEEP\\(*\\(.vectors\\)\\)|g' linker_gd32.ld)",
+      "Bash(sed -i 's|{{VECTOR_TABLE}}|__gVectors|g' linker_gd32.ld)"
     ]
   }
 }

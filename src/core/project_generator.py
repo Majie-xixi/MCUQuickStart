@@ -307,7 +307,6 @@ class ProjectGenerator:
             "ROM_SIZE": self._kb_to_hex(flash_kb),
             "TCMRAM_MEMORY": tcmram_memory,
             "TCMRAM_SECTION": tcmram_section,
-            "VECTOR_TABLE": "g_pfnVectors" if "STM32" in chip_config.get("family", "") else "__gVectors",
         }
 
         if use_freertos:
@@ -335,8 +334,10 @@ class ProjectGenerator:
     def _generate_gcc(self, output_dir: Path, project_name: str, chip_config: dict,
                        variables: dict):
         """Generate CMakeLists.txt, linker script, and ensure GCC startup file exists."""
-        # Render linker script
-        ld_template = self._templates_dir / "common" / "linker.ld"
+        # Render linker script (GD32 and STM32 use different vector section names/symbols)
+        family = chip_config.get("family", "")
+        ld_name = "linker_gd32.ld" if "GD32" in family else "linker_stm32.ld"
+        ld_template = self._templates_dir / "common" / ld_name
         if ld_template.exists():
             render(ld_template, output_dir / f"{project_name}.ld", variables)
 
