@@ -349,7 +349,8 @@ class ProjectGenerator:
             if src_dir.is_dir():
                 for f in sorted(src_dir.glob(pattern)):
                     if f.name not in exclude_fwlib:
-                        c_sources.append(f"    {d}/{f.name}")
+                        rel = f.relative_to(output_dir).as_posix()
+                        c_sources.append(f"    {rel}")
         variables["CMAKE_SOURCES"] = "\n".join(c_sources)
 
         # Render CMakeLists.txt
