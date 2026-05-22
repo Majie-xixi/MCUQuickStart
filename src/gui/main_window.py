@@ -122,15 +122,6 @@ class MainWindow(QMainWindow):
         row4.addStretch()
         proj_layout.addLayout(row4)
 
-        row5 = QHBoxLayout()
-        self._build_label = QLabel()
-        row5.addWidget(self._build_label)
-        self._build_combo = QComboBox()
-        self._build_combo.addItems(["Keil MDK (ARMCC)", "GCC + CMake"])
-        row5.addWidget(self._build_combo)
-        row5.addStretch()
-        proj_layout.addLayout(row5)
-
         layout.addWidget(self._proj_group)
 
         # --- Template Choice ---
@@ -190,7 +181,6 @@ class MainWindow(QMainWindow):
         self._lib_freertos.setText(self._tr("lib_freertos"))
         self._help_btn.setText(self._tr("help"))
         self._hxtal_label.setText(self._tr("hxtal_freq"))
-        self._build_label.setText(self._tr("build_system"))
 
     # ── Help ─────────────────────────────────────────────────────
     def _show_help(self):
@@ -270,7 +260,7 @@ class MainWindow(QMainWindow):
         if self._lib_freertos.isChecked():
             optional_libs.append("freertos")
 
-        build_system = "gcc" if "GCC" in self._build_combo.currentText() else "keil"
+        build_system = "both"
 
         try:
             output_path = output_dir / proj_name
