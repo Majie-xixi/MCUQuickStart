@@ -24,8 +24,9 @@ class MainWindow(QMainWindow):
                 border-radius: 8px; margin-top: 8px; padding-top: 14px;
             }
             QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; }
-            QPushButton { border-radius: 5px; padding: 5px 14px; }
-            QLineEdit, QComboBox { border-radius: 4px; padding: 3px 6px; }
+            QPushButton { border: 1px solid #d0d5dd; border-radius: 5px; padding: 5px 14px; background: #fafbfc; }
+            QPushButton:hover { background: #e8ecf0; }
+            QLineEdit, QComboBox { border: 1px solid #d0d5dd; border-radius: 4px; padding: 3px 6px; background: white; }
             QTextEdit { border-radius: 6px; font-family: "Consolas", monospace; }
         """)
 
