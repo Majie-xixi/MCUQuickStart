@@ -62,6 +62,8 @@ MCUQuickStart v1.0.0 解决了裸机搭工程的痛，v1.1.0 解决了 FreeRTOS 
 
 一句话：**选芯片→选模板→(勾FreeRTOS)→(勾GCC+CMake)→点生成，一分钟拿到 Keil5 + CLion/VS Code 双兼容的工程，打开即编译。**
 
+![软件主界面]
+
 目前支持 **37 款芯片**，4 大系列，全部 Keil + GCC 双编译器验证：
 
 | 系列 | 内核 | 厂商 | 型号数 | Keil | GCC |
@@ -133,6 +135,8 @@ MCUQuickStart v1.0.0 解决了裸机搭工程的痛，v1.1.0 解决了 FreeRTOS 
 6. **可选**：勾 FreeRTOS、勾 GCC+CMake、选晶振频率
 7. **点生成** → Keil MDK 打开 `.uvprojx`，或 CLion/VS Code 打开 `CMakeLists.txt` → 编译 → 一把过
 
+![GCC编译成功效果]
+
 ---
 
 ## 实际场景
@@ -181,11 +185,7 @@ GCC/CMake 也是同样的思路：芯片 JSON 配置好 MCPU、FPU 参数、TCMR
 
 GitHub Release：**[https://github.com/Majie-xixi/MCUQuickStart/releases](https://github.com/Majie-xixi/MCUQuickStart/releases)**
 
-Gitee Release：**[https://gitee.com/mj_yyfddca/mcu_quick_start/releases](https://gitee.com/mj_yyfddca/mcu_quick_start/releases)**
-
 下载 `MCUQuickStart.exe` 直接运行，无需安装。
-
-> 源码开源在 Gitee：[https://gitee.com/mj_yyfddca/mcu_quick_start](https://gitee.com/mj_yyfddca/mcu_quick_start)
 
 > 如果觉得好用，⭐ **Star** 支持一下，让更多嵌入式同行看到！
 
@@ -199,6 +199,6 @@ v1.0.0 解决了裸机工程搭建，v1.1.0 解决了 FreeRTOS 移植，**v1.2.0
 
 把这些全部自动化之后，你只用做一件事：**选芯片，勾需求，点生成。** 精力花在业务代码上，而不是跟工具链斗智斗勇。
 
-后续计划加更多芯片系列（GD32F3xx、STM32G0 等），有什么需求欢迎在 GitHub Issues 或 Gitee Issues 里提。
+后续计划加更多芯片系列（GD32F3xx、STM32G0 等），有什么需求欢迎在 GitHub Issues 里提。
 
 *原创文章，转载注明出处。*
