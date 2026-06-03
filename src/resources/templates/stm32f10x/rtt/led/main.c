@@ -21,9 +21,11 @@ INIT_APP_EXPORT(led_init);
 
 int main(void)
 {
+    rt_thread_t tid;
+
     nvic_config();
 
-    rt_thread_t tid = rt_thread_create(
+    tid = rt_thread_create(
         "led", led_thread_entry, RT_NULL, 512, 20, 10);
     if (tid != RT_NULL)
         rt_thread_startup(tid);

@@ -4,6 +4,7 @@
 
 #if SYSTEM_SUPPORT_OS == 3
 #include <rtthread.h>
+#include <rthw.h>
 #endif
 
 void nvic_config(void)
