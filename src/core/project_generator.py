@@ -662,6 +662,10 @@ class ProjectGenerator:
             f'<File><FileName>context_rvds.S</FileName><FileType>2</FileType>'
             f'<FilePath>..\\RT-Thread\\{port_rel_win}\\context_rvds.S</FilePath></File>'
         )
+        lines.append(
+            f'<File><FileName>board.c</FileName><FileType>1</FileType>'
+            f'<FilePath>..\\USER\\board.c</FilePath></File>'
+        )
         lines.append('</Files></Group>')
 
         # FinSH disabled by default (ARMCC V5 C90 incompatible).
