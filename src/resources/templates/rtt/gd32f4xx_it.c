@@ -12,11 +12,17 @@ void nvic_config(void)
     nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
 }
 
+/*
+ * Default weak handlers. When RT-Thread is enabled, HardFault/MemManage/BusFault/
+ * UsageFault are handled by context_rvds.S (rt_hw_hard_fault) instead.
+ */
+#if SYSTEM_SUPPORT_OS != 3
 void NMI_Handler(void) { while (1) {} }
 void HardFault_Handler(void) { while (1) {} }
 void MemManage_Handler(void) { while (1) {} }
 void BusFault_Handler(void) { while (1) {} }
 void UsageFault_Handler(void) { while (1) {} }
+#endif
 void DebugMon_Handler(void) { while (1) {} }
 
 #if SYSTEM_SUPPORT_OS == 3
