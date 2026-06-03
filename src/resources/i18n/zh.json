@@ -29,7 +29,7 @@
   "hxtal_freq": "外部晶振：",
   "language": "语言",
   "help": "使用说明",
-  "help_text": "<h3>MCUQuickStart 使用方法</h3><ol><li><b>设置SDK根目录</b>：将所有芯片固件包（STM32/GD32）和可选库（FreeRTOS）放在同一目录下，工具会自动匹配。</li><li><b>选择芯片</b>：先选系列，再选具体型号。</li><li><b>填写项目名称和输出目录</b>：生成的项目将放在输出目录下的同名文件夹中。</li><li><b>选择代码模板</b>：空壳（仅主循环）、LED闪烁、串口打印。</li><li><b>可选库</b>：勾选 FreeRTOS 可生成带 RTOS 的工程模板。</li><li><b>点击生成工程</b>：在 Keil MDK 中打开生成的 .uvprojx 即可编译运行。</li></ol>",
+  "help_text": "<h3>MCUQuickStart 使用方法</h3><ol><li><b>设置SDK根目录</b>：将所有芯片固件包（STM32/GD32）和可选库（FreeRTOS、RT-Thread Nano）放在同一目录下，工具自动匹配。SDK 目录下的 .zip/.7z 压缩包会自动解压。</li><li><b>选择芯片</b>：先选系列，再选具体型号。</li><li><b>填写项目名称和输出目录</b>：生成的项目将放在输出目录下的同名文件夹中。</li><li><b>选择代码模板</b>：空壳（仅主循环）、LED闪烁、串口打印。</li><li><b>可选库</b>：勾选 FreeRTOS 或 RT-Thread Nano 可生成带 RTOS 的工程模板（二者互斥，只能选一个）。</li><li><b>外部晶振</b>：选择实际焊接的晶振频率。</li><li><b>GCC + CMake</b>：勾选后可同时生成 CMakeLists.txt，用 CLion / VS Code 开发。</li><li><b>点击生成工程</b>：在 Keil MDK 中打开 .uvprojx 即可编译运行。</li></ol>",
   "optional_libs": "可选库",
   "lib_freertos": "FreeRTOS (实时操作系统)",
   "lib_rtt_nano": "RT-Thread Nano (实时操作系统)",
