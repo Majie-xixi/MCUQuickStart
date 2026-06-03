@@ -8,6 +8,10 @@ static uint16_t g_fac_us = 72 * 5;
 #include "task.h"
 #endif
 
+#if SYSTEM_SUPPORT_OS == 3  /* RT-Thread */
+#include <rtthread.h>
+#endif
+
 #if SYSTEM_SUPPORT_OS == 1  /* UCOS */
 #include "includes.h"
 static uint16_t g_fac_ms = 0;
@@ -74,6 +78,10 @@ void delay_init(uint16_t sysclk)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#elif SYSTEM_SUPPORT_OS == 3  /* RT-Thread: use DWT for us delays */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 #elif SYSTEM_SUPPORT_OS == 1  /* UCOS */
     uint32_t reload;
     reload = sysclk / 8;
@@ -102,6 +110,31 @@ void delay_ms(uint16_t nms)
         {
             vTaskDelay(pdMS_TO_TICKS(nms));
         }
+    }
+    else
+    {
+        uint32_t i;
+        for (i = 0; i < nms; i++)
+        {
+            delay_us(1000);
+        }
+    }
+}
+
+#elif SYSTEM_SUPPORT_OS == 3  /* RT-Thread delay implementations */
+
+void delay_us(uint32_t nus)
+{
+    uint32_t start = DWT->CYCCNT;
+    uint32_t ticks = nus * g_fac_us;
+    while ((uint32_t)(DWT->CYCCNT - start) < ticks);
+}
+
+void delay_ms(uint16_t nms)
+{
+    if (rt_thread_self() != RT_NULL)
+    {
+        rt_thread_mdelay(nms);
     }
     else
     {

@@ -19,6 +19,19 @@
           "Cortex-M4": "portable/RVDS/ARM_CM4F"
         },
         "systick_clock_div": 1
+      },
+      "rtt_nano": {
+        "sdk_subdir": "rt-thread",
+        "core_files": [
+          "clock.c", "components.c", "cpu.c", "device.c",
+          "idle.c", "ipc.c", "irq.c", "kservice.c",
+          "mem.c", "memheap.c", "mempool.c", "object.c",
+          "scheduler.c", "signal.c", "slab.c", "thread.c", "timer.c"
+        ],
+        "port_map": {
+          "Cortex-M3": "libcpu/arm/cortex-m3",
+          "Cortex-M4": "libcpu/arm/cortex-m4"
+        }
       }
     },
     "cmsis": {

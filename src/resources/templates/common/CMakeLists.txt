@@ -55,6 +55,7 @@ set(SDK_SOURCES
     STARTUP/{{STARTUP_FILE}}
     {{SDK_SOURCES}}
     {{FREERTOS_CMAKE_SOURCES}}
+    {{RTT_CMAKE_SOURCES}}
 )
 
 # User sources (app + driver + system — keep warnings)
@@ -72,6 +73,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CMSIS/{{DEVICE_INC_REL}}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/FIRMWARE/Include
     {{FREERTOS_CMAKE_INCLUDES}}
+    {{RTT_CMAKE_INCLUDES}}
 )
 
 # User includes (keep warnings for user code)

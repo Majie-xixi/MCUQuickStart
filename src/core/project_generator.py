@@ -31,15 +31,22 @@ class ProjectGenerator:
                 content = "".join(lines)
                 (user_dir / src_file.name).write_text(content, encoding="utf-8")
 
-    def _code_vars(self, chip_config: dict, use_freertos: bool = False) -> dict:
+    def _code_vars(self, chip_config: dict, use_freertos: bool = False,
+                   use_rtt: bool = False) -> dict:
         """Map chip_config fields to template placeholder names."""
+        if use_rtt:
+            os_val = "3"
+        elif use_freertos:
+            os_val = "2"
+        else:
+            os_val = "0"
         cv = {
             "DEVICE_HEADER": chip_config.get("device_header", ""),
             "CHIP_FAMILY": chip_config.get("family", ""),
             "DEVICE_DEFINE": chip_config.get("device_define", ""),
             "DEBUG_USART": chip_config.get("debug_usart", "USART0"),
             "CONF_HEADER": chip_config.get("conf_header", ""),
-            "SYSTEM_SUPPORT_OS": "2" if use_freertos else "0",
+            "SYSTEM_SUPPORT_OS": os_val,
         }
         if use_freertos:
             freertos_cfg = chip_config.get("optional_libs", {}).get("freertos", {})
@@ -120,6 +127,78 @@ class ProjectGenerator:
         if main_h_tmpl.exists():
             render(main_h_tmpl, user_dir / "main.h", cv)
 
+    def _setup_rtt(self, output_dir: Path, chip_config: dict, cv: dict):
+        """Copy RT-Thread Nano kernel, port files from SDK; render rtconfig.h and board.c."""
+        rtt_cfg = chip_config.get("optional_libs", {}).get("rtt_nano", {})
+        core_name = chip_config.get("core", "Cortex-M3")
+        port_rel = rtt_cfg.get("port_map", {}).get(core_name, "libcpu/arm/cortex-m3")
+
+        sdk_root = self._sdk.get_path("SDK_ROOT")
+        rtt_sdk = self._sdk.resolve_sdk(sdk_root, rtt_cfg.get("sdk_subdir", "rt-thread"))
+        if not rtt_sdk:
+            raise FileNotFoundError(
+                f"RT-Thread Nano SDK not found. Expected 'rt-thread*' under {sdk_root}.\n"
+                f"Please download RT-Thread Nano and extract to the SDK directory.")
+
+        sdk_base = Path(rtt_sdk)
+
+        # Create RT-Thread directory structure
+        rtt_dir = output_dir / "RT-Thread"
+        rtt_dir.mkdir(exist_ok=True)
+
+        # Copy kernel source files from src/
+        for fname in rtt_cfg.get("core_files", []):
+            src = sdk_base / "src" / fname
+            if src.exists():
+                (rtt_dir / fname).write_bytes(src.read_bytes())
+
+        # Copy headers from include/
+        inc_src = sdk_base / "include"
+        inc_dst = rtt_dir / "include"
+        inc_dst.mkdir(exist_ok=True)
+        if inc_src.is_dir():
+            for h in inc_src.glob("*.h"):
+                (inc_dst / h.name).write_bytes(h.read_bytes())
+
+        # Copy port files (RVDS for Keil, cpuport.c is common)
+        port_src = sdk_base / port_rel
+        port_dst = rtt_dir / port_rel
+        port_dst.mkdir(parents=True, exist_ok=True)
+        if port_src.is_dir():
+            for f in port_src.iterdir():
+                if f.is_file() and f.name != "context_iar.S":
+                    (port_dst / f.name).write_bytes(f.read_bytes())
+
+        # Copy FinSH shell component
+        finsh_src = sdk_base / "components" / "finsh"
+        finsh_dst = rtt_dir / "finsh"
+        if finsh_src.is_dir():
+            finsh_dst.mkdir(exist_ok=True)
+            for f in finsh_src.iterdir():
+                if f.is_file():
+                    (finsh_dst / f.name).write_bytes(f.read_bytes())
+
+        # Render rtconfig.h
+        config_tmpl = self._templates_dir / "rtt" / "rtconfig.h"
+        if config_tmpl.exists():
+            render(config_tmpl, inc_dst / "rtconfig.h", cv)
+
+        # Render board.c (family-specific standard library adaptation)
+        family_lower = chip_config.get("family", "").lower()
+        board_tmpl = self._templates_dir / "rtt" / f"{family_lower}_board.c"
+        user_dir = output_dir / "USER"
+        if board_tmpl.exists():
+            render(board_tmpl, user_dir / "board.c", cv)
+
+        # Overwrite it.c and main.h with RT-Thread versions
+        itc_tmpl = self._templates_dir / "rtt" / f"{family_lower}_it.c"
+        if itc_tmpl.exists():
+            render(itc_tmpl, user_dir / f"{family_lower}_it.c", cv)
+
+        main_h_tmpl = self._templates_dir / "rtt" / f"{family_lower}_main.h"
+        if main_h_tmpl.exists():
+            render(main_h_tmpl, user_dir / "main.h", cv)
+
     def generate(self, family_name: str, chip_name: str, chip_config: dict,
                  project_name: str, output_dir: Path, template_type: str,
                  optional_libs: list[str] | None = None,
@@ -133,9 +212,10 @@ class ProjectGenerator:
         family_lower = family_name.lower()
 
         use_freertos = optional_libs and "freertos" in optional_libs
+        use_rtt = optional_libs and "rtt_nano" in optional_libs
         use_gcc = build_system in ("gcc", "both")
         use_keil = build_system in ("keil", "both")
-        cv = self._code_vars(chip_config, use_freertos)
+        cv = self._code_vars(chip_config, use_freertos, use_rtt)
 
         # 1. Copy firmware from SDK
         sdk_key = chip_config.get("sdk_key", chip_config.get("vendor", ""))
@@ -187,14 +267,18 @@ class ProjectGenerator:
         if "hxtal_hz" in config:
             self._patch_system_clock(output_dir, family_lower, config["hxtal_hz"])
 
-        # 7. Setup FreeRTOS if enabled (after SDK templates to overwrite it.c)
+        # 7. Setup RTOS if enabled (after SDK templates to overwrite it.c)
         if use_freertos:
             self._setup_freertos(output_dir, chip_config, cv)
             if use_gcc:
                 self._gcc_freertos_port(output_dir, chip_config)
+        if use_rtt:
+            self._setup_rtt(output_dir, chip_config, cv)
 
-        # 7. Render main.c
-        if use_freertos:
+        # 8. Render main.c
+        if use_rtt:
+            main_template = self._templates_dir / family_lower / "rtt" / template_type / "main.c"
+        elif use_freertos:
             main_template = self._templates_dir / family_lower / "freertos" / template_type / "main.c"
         else:
             main_template = self._templates_dir / family_lower / template_type / "main.c"
@@ -207,16 +291,16 @@ class ProjectGenerator:
                 if rt.exists():
                     rt.unlink()
 
-        # 8. Generate GCC/CMake output
+        # 9. Generate GCC/CMake output
         if use_gcc:
-            cmake_vars = self._build_cmake_vars(project_name, chip_name, chip_config, use_freertos)
+            cmake_vars = self._build_cmake_vars(project_name, chip_name, chip_config, use_freertos, use_rtt)
             self._generate_gcc(output_dir, project_name, chip_config, cmake_vars)
 
-        # 9. Generate Keil .uvprojx from template
+        # 10. Generate Keil .uvprojx from template
         if use_keil:
             uvprojx_template = self._templates_dir / family_lower / "uvprojx_template.xml"
             if uvprojx_template.exists():
-                variables = self._build_uvprojx_vars(project_name, chip_name, chip_config, output_dir, use_freertos)
+                variables = self._build_uvprojx_vars(project_name, chip_name, chip_config, output_dir, use_freertos, use_rtt)
                 mdk_dir = output_dir / "MDK-ARM"
                 mdk_dir.mkdir(parents=True, exist_ok=True)
                 render(uvprojx_template, mdk_dir / f"{project_name}.uvprojx", variables)
@@ -249,7 +333,7 @@ class ProjectGenerator:
         return f"0x{int(kb) * 1024:X}"
 
     def _build_cmake_vars(self, project_name: str, chip_name: str, chip_config: dict,
-                           use_freertos: bool = False) -> dict:
+                           use_freertos: bool = False, use_rtt: bool = False) -> dict:
         """Build template variables for CMakeLists.txt and linker.ld generation."""
         config = chip_config.get("config", {})
         cpu_type = config.get("cpu_type", "Cortex-M3")
@@ -328,6 +412,23 @@ class ProjectGenerator:
         else:
             variables["FREERTOS_CMAKE_SOURCES"] = ""
             variables["FREERTOS_CMAKE_INCLUDES"] = ""
+
+        if use_rtt:
+            rtt_cfg = chip_config.get("optional_libs", {}).get("rtt_nano", {})
+            core_name = chip_config.get("core", "Cortex-M3")
+            port_rel = rtt_cfg.get("port_map", {}).get(core_name, "libcpu/arm/cortex-m3")
+            core_files = rtt_cfg.get("core_files", [])
+            srcs = [f'"RT-Thread/{f}"' for f in core_files]
+            srcs.append(f'"RT-Thread/{port_rel}/cpuport.c"')
+            srcs.append(f'"RT-Thread/{port_rel}/context_gcc.S"')
+            variables["RTT_CMAKE_SOURCES"] = "\n    ".join(srcs)
+            variables["RTT_CMAKE_INCLUDES"] = (
+                f"${{CMAKE_CURRENT_SOURCE_DIR}}/RT-Thread/include\n"
+                f"    ${{CMAKE_CURRENT_SOURCE_DIR}}/RT-Thread/{port_rel}"
+            )
+        else:
+            variables["RTT_CMAKE_SOURCES"] = ""
+            variables["RTT_CMAKE_INCLUDES"] = ""
 
         return variables
 
@@ -532,8 +633,63 @@ class ProjectGenerator:
         port_rel_win = port_rel.replace("/", "\\\\")
         return f";..\\\\FreeRTOS\\\\include;..\\\\FreeRTOS\\\\{port_rel_win}"
 
+    @staticmethod
+    def _rtt_groups_xml(chip_config: dict) -> str:
+        """Generate RT-Thread CORE and PORT group XML for Keil uvprojx."""
+        rtt_cfg = chip_config.get("optional_libs", {}).get("rtt_nano", {})
+        core_name = chip_config.get("core", "Cortex-M3")
+        port_rel = rtt_cfg.get("port_map", {}).get(core_name, "libcpu/arm/cortex-m3")
+        port_rel_win = port_rel.replace("/", "\\\\")
+        core_files = rtt_cfg.get("core_files", [])
+
+        lines = []
+        # RT-Thread_CORE group
+        lines.append('<Group><GroupName>RT-Thread_CORE</GroupName><Files>')
+        for f in core_files:
+            lines.append(
+                f'<File><FileName>{f}</FileName><FileType>1</FileType>'
+                f'<FilePath>..\\RT-Thread\\{f}</FilePath></File>'
+            )
+        lines.append('</Files></Group>')
+
+        # RT-Thread_PORT group
+        lines.append('<Group><GroupName>RT-Thread_PORT</GroupName><Files>')
+        lines.append(
+            f'<File><FileName>cpuport.c</FileName><FileType>1</FileType>'
+            f'<FilePath>..\\RT-Thread\\{port_rel_win}\\cpuport.c</FilePath></File>'
+        )
+        lines.append(
+            f'<File><FileName>context_rvds.S</FileName><FileType>2</FileType>'
+            f'<FilePath>..\\RT-Thread\\{port_rel_win}\\context_rvds.S</FilePath></File>'
+        )
+        lines.append('</Files></Group>')
+
+        # FinSH group (optional shell)
+        lines.append('<Group><GroupName>RT-Thread_FINISH</GroupName><Files>')
+        finsh_files = ["cmd.c", "msh.c", "msh_file.c", "msh_parse.c", "shell.c",
+                       "finsh.h", "msh.h", "msh_parse.h", "shell.h"]
+        for f in finsh_files:
+            ftype = 5 if f.endswith(".h") else 1
+            lines.append(
+                f'<File><FileName>{f}</FileName><FileType>{ftype}</FileType>'
+                f'<FilePath>..\\RT-Thread\\finsh\\{f}</FilePath></File>'
+            )
+        lines.append('</Files></Group>')
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def _rtt_includes(chip_config: dict) -> str:
+        """Generate additional RT-Thread include paths."""
+        core_name = chip_config.get("core", "Cortex-M3")
+        rtt_cfg = chip_config.get("optional_libs", {}).get("rtt_nano", {})
+        port_rel = rtt_cfg.get("port_map", {}).get(core_name, "libcpu/arm/cortex-m3")
+        port_rel_win = port_rel.replace("/", "\\\\")
+        return f";..\\\\RT-Thread\\\\include;..\\\\RT-Thread\\\\{port_rel_win};..\\\\RT-Thread\\\\finsh"
+
     def _build_uvprojx_vars(self, project_name: str, chip_name: str, chip_config: dict,
-                            output_dir: Path, use_freertos: bool = False) -> dict:
+                            output_dir: Path, use_freertos: bool = False,
+                            use_rtt: bool = False) -> dict:
         """Build template variables map for uvprojx generation."""
         config = chip_config.get("config", {})
         startup = chip_config.get("startup", "")
@@ -589,5 +745,12 @@ class ProjectGenerator:
         else:
             variables["FREERTOS_GROUPS"] = ""
             variables["FREERTOS_INCLUDES"] = ""
+
+        if use_rtt:
+            variables["RTT_GROUPS"] = self._rtt_groups_xml(chip_config)
+            variables["RTT_INCLUDES"] = self._rtt_includes(chip_config)
+        else:
+            variables["RTT_GROUPS"] = ""
+            variables["RTT_INCLUDES"] = ""
 
         return variables

@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,{{DEVICE_DEFINE}}{{HXTAL_DEFINES}}</Define>
               <Undefine></Undefine>
-              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\Include;..\CMSIS\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\startup\arm;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys{{FREERTOS_INCLUDES}}</IncludePath>
+              <IncludePath>..\USER;..\CMSIS;..\FIRMWARE\Include;..\CMSIS\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\Include;..\CMSIS\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x\startup\arm;..\HARDWARE;..\DRIVER;..\APP;..\SYSTEM\delay;..\SYSTEM\sys{{FREERTOS_INCLUDES}}{{RTT_INCLUDES}}</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -462,6 +462,7 @@
           <GroupName>APP</GroupName>
         </Group>
 {{FREERTOS_GROUPS}}
+{{RTT_GROUPS}}
       </Groups>
     </Target>
   </Targets>

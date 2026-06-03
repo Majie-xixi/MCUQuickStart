@@ -155,9 +155,15 @@ class MainWindow(QMainWindow):
         lib_layout = QVBoxLayout(self._lib_group)
         self._lib_freertos = QCheckBox()
         lib_layout.addWidget(self._lib_freertos)
+        self._lib_rtt_nano = QCheckBox()
+        lib_layout.addWidget(self._lib_rtt_nano)
         self._lib_gcc = QCheckBox()
         lib_layout.addWidget(self._lib_gcc)
         layout.addWidget(self._lib_group)
+
+        # RT-Thread Nano and FreeRTOS are mutually exclusive
+        self._lib_freertos.toggled.connect(self._on_rtos_toggled)
+        self._lib_rtt_nano.toggled.connect(self._on_rtos_toggled)
 
         # --- Generate Button ---
         self._gen_btn = QPushButton()
@@ -195,6 +201,7 @@ class MainWindow(QMainWindow):
         self._log_group.setTitle(self._tr("log"))
         self._lib_group.setTitle(self._tr("optional_libs"))
         self._lib_freertos.setText(self._tr("lib_freertos"))
+        self._lib_rtt_nano.setText(self._tr("lib_rtt_nano"))
         self._lib_gcc.setText(self._tr("lib_gcc"))
         self._help_btn.setText(self._tr("help"))
         self._hxtal_label.setText(self._tr("hxtal_freq"))
@@ -232,6 +239,15 @@ class MainWindow(QMainWindow):
         self._chip_combo.clear()
         chips = self._chip_db.get_chips_for_family(family)
         self._chip_combo.addItems(chips)
+
+    # ── RTOS mutual exclusion ─────────────────────────────────────
+    def _on_rtos_toggled(self, checked: bool):
+        sender = self.sender()
+        if checked:
+            if sender is self._lib_freertos:
+                self._lib_rtt_nano.setChecked(False)
+            elif sender is self._lib_rtt_nano:
+                self._lib_freertos.setChecked(False)
 
     # ── Generate ─────────────────────────────────────────────────
     def _log_msg(self, msg: str):
@@ -276,6 +292,8 @@ class MainWindow(QMainWindow):
         optional_libs = []
         if self._lib_freertos.isChecked():
             optional_libs.append("freertos")
+        if self._lib_rtt_nano.isChecked():
+            optional_libs.append("rtt_nano")
 
         build_system = "both" if self._lib_gcc.isChecked() else "keil"
 

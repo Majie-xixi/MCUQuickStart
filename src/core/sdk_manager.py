@@ -1,5 +1,7 @@
 """SDK manager: persist SDK paths, find and copy library files from SDK."""
 import json
+import zipfile
+import subprocess
 from pathlib import Path
 
 CONFIG_FILE = Path.home() / ".mcu_template_config.json"
@@ -28,21 +30,60 @@ class SDKManager:
         return self._paths.get(vendor, "")
 
     def resolve_sdk(self, sdk_root: str, sdk_subdir: str) -> str | None:
-        """Find SDK directory by name prefix under the SDK root (searches up to 2 levels)."""
+        """Find SDK directory by name prefix under the SDK root (searches up to 2 levels).
+
+        If not found, auto-extract matching .zip/.7z archives before retrying.
+        """
         base = Path(sdk_root)
         if not base.is_dir():
             return None
+        # Try direct search first
+        result = self._search_sdk_dir(base, sdk_subdir)
+        if result:
+            return result
+        # Not found — try auto-extracting archives
+        self._auto_extract(base)
+        return self._search_sdk_dir(base, sdk_subdir)
+
+    @staticmethod
+    def _search_sdk_dir(base: Path, sdk_subdir: str) -> str | None:
+        """Search for a directory by name prefix under base (up to 2 levels)."""
+        prefix = sdk_subdir.lower()
         # Level 1: direct children
         for entry in base.iterdir():
-            if entry.is_dir() and entry.name.lower().startswith(sdk_subdir.lower()):
+            if entry.is_dir() and entry.name.lower().startswith(prefix):
                 return str(entry)
-        # Level 2: grandchildren (e.g. stsw-stm32054/STM32F10x_StdPeriph_Lib_V3.6.0)
+        # Level 2: grandchildren
         for entry in base.iterdir():
             if entry.is_dir():
                 for sub in entry.iterdir():
-                    if sub.is_dir() and sub.name.lower().startswith(sdk_subdir.lower()):
+                    if sub.is_dir() and sub.name.lower().startswith(prefix):
                         return str(sub)
         return None
+
+    @staticmethod
+    def _auto_extract(base: Path) -> None:
+        """Scan for .zip/.7z archives and auto-extract if not already present."""
+        archives = list(base.glob("*.zip")) + list(base.glob("*.7z"))
+        for archive in archives:
+            extract_dir = base / archive.stem
+            if extract_dir.exists():
+                continue  # Already extracted
+            if archive.suffix == ".zip":
+                try:
+                    with zipfile.ZipFile(archive, 'r') as zf:
+                        zf.extractall(base)
+                except (zipfile.BadZipFile, OSError):
+                    pass
+            elif archive.suffix == ".7z":
+                # Try 7z CLI, fallback silently
+                try:
+                    subprocess.run(
+                        ["7z", "x", str(archive), f"-o{base}", "-y"],
+                        capture_output=True, timeout=300,
+                    )
+                except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+                    pass
 
     def find_file(self, sdk_root: Path, relative_path: str) -> Path | None:
         """Search for a file by relative path, trying common SDK path prefixes."""

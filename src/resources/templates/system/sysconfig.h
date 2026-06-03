@@ -6,6 +6,7 @@
 // 0 = 裸机 (默认)
 // 1 = UCOSII/UCOSIII
 // 2 = FreeRTOS
+// 3 = RT-Thread
 #define SYSTEM_SUPPORT_OS	{{SYSTEM_SUPPORT_OS}}
 
 /*
