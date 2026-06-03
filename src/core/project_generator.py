@@ -756,6 +756,8 @@ class ProjectGenerator:
             "FLASH_DRIVER": flash_driver,
             "FWLIB_FILES": self._scan_fwlib_files(output_dir, chip_config.get("fwlib_exclude")),
             "HXTAL_DEFINES": hxtal_defines,
+            # Microlib must be OFF for RT-Thread's $Sub$$main/$Super$$main linker mechanism
+            "USE_MICROLIB": "0" if use_rtt else "1",
         }
 
         if use_freertos:
