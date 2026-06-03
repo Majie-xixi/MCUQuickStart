@@ -20,8 +20,15 @@ RT_WEAK void *rt_heap_end_get(void)
 
 void rt_hw_board_init(void)
 {
-    /* SystemCoreClock is already set by SystemInit() in startup before main().
-       Configure SysTick to generate RT-Thread tick interrupt. */
+    /* Enable FPU — required on Cortex-M4 before first context switch.
+       FPU context switching via VLDM/VSTM triggers NOCP UsageFault if
+       CPACR.FPU bits are not set → escalates to HardFault. */
+    SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11 * 2));
+    __DSB();
+
+    NVIC_SetPriorityGrouping(4);
+    NVIC_SetPriority(PendSV_IRQn, 0xFF);
+
     SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
 #ifdef RT_USING_COMPONENTS_INIT

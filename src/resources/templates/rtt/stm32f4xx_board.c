@@ -20,8 +20,18 @@ RT_WEAK void *rt_heap_end_get(void)
 
 void rt_hw_board_init(void)
 {
-    /* SystemCoreClock is already set by SystemInit() in startup before main().
-       Configure SysTick to generate RT-Thread tick interrupt. */
+    /* Enable FPU — required BEFORE first context switch on Cortex-M4.
+       If FPU is disabled in CPACR, VLDM/VSTM in PendSV cause NOCP UsageFault
+       → escalates to HardFault. This write is a harmless no-op on Cortex-M3. */
+    SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11 * 2));
+    __DSB();
+
+    /* NVIC priority: PendSV must be lowest so context switches
+       never preempt real interrupts. */
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
+    NVIC_SetPriority(PendSV_IRQn, 0xFF);
+
+    /* SysTick at priority 0 for accurate tick */
     SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
 #ifdef RT_USING_COMPONENTS_INIT
