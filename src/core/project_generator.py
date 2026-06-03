@@ -153,11 +153,21 @@ class ProjectGenerator:
                 (rtt_dir / fname).write_bytes(src.read_bytes())
 
         # Patch components.c: ARMCC V5 defines __CC_ARM, not __ARMCC_VERSION.
-        # Without this fix, $Sub$$main hook won't compile → rtthread_startup()
-        # is never called → scheduler never starts.
+        # Two critical spots use this check:
+        #   1. $Sub$$main hook (line ~139) — if missing, rtthread_startup()
+        #      is never called, scheduler never starts.
+        #   2. main_thread_entry() calls $Super$$main (line ~192) — if missing,
+        #      the main thread never invokes user's main().
+        # Both must also match __CC_ARM for ARMCC V5 compatibility.
         components_c = rtt_dir / "components.c"
         if components_c.exists():
-            content = components_c.read_text(encoding="utf-8")
+            content = components_c.read_text(encoding="utf-8", errors="replace")
+            content = content.replace(
+                "#ifdef __ARMCC_VERSION",
+                "#if defined(__ARMCC_VERSION) || defined(__CC_ARM)"
+            )
+            # The second occurrence is inside main_thread_entry, guards
+            # $Super$$main() call for ARMCC. ARMCC V5 needs it too.
             content = content.replace(
                 "#ifdef __ARMCC_VERSION",
                 "#if defined(__ARMCC_VERSION) || defined(__CC_ARM)"
