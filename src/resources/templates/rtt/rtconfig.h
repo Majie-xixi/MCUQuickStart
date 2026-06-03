@@ -3,6 +3,9 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+/* ARMCC V5 C90 compatibility: enables standard C library headers in rtdef.h */
+#define RT_USING_LIBC
+
 /* Basic Configuration */
 #define RT_THREAD_PRIORITY_MAX       32
 #define RT_TICK_PER_SECOND           1000
@@ -36,7 +39,11 @@
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE           128
 
-/* FinSH Shell */
-#define RT_USING_FINSH
+/*
+ * FinSH Shell — disabled by default due to ARMCC V5 C90 limitations.
+ * MSH_CMD_EXPORT macros with multi-word descriptions are not C90 compatible.
+ * Enable only if using ARMCC V6 or GCC.
+ */
+/* #define RT_USING_FINSH */
 
 #endif /* __RTTHREAD_CFG_H__ */

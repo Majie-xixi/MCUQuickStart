@@ -664,17 +664,10 @@ class ProjectGenerator:
         )
         lines.append('</Files></Group>')
 
-        # FinSH group (optional shell)
-        lines.append('<Group><GroupName>RT-Thread_FINISH</GroupName><Files>')
-        finsh_files = ["cmd.c", "msh.c", "msh_file.c", "msh_parse.c", "shell.c",
-                       "finsh.h", "msh.h", "msh_parse.h", "shell.h"]
-        for f in finsh_files:
-            ftype = 5 if f.endswith(".h") else 1
-            lines.append(
-                f'<File><FileName>{f}</FileName><FileType>{ftype}</FileType>'
-                f'<FilePath>..\\RT-Thread\\finsh\\{f}</FilePath></File>'
-            )
-        lines.append('</Files></Group>')
+        # FinSH disabled by default (ARMCC V5 C90 incompatible).
+        # Uncomment the group below if using ARMCC V6 or GCC + RT_USING_FINSH.
+        # lines.append('<Group><GroupName>RT-Thread_FINISH</GroupName><Files>')
+        # ...
 
         return "\n".join(lines)
 
