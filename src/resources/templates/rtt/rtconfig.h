@@ -1,9 +1,9 @@
-/* RT-Thread Nano config file */
+/* RT-Thread Nano config file — matches official stm32f407-msh example */
 
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
-/* ARMCC V5 C90 compatibility: enables standard C library headers in rtdef.h */
+/* ARMCC V5 compatibility: enables standard C library headers in rtdef.h */
 #define RT_USING_LIBC
 
 /* Basic Configuration */
@@ -16,34 +16,29 @@
 #define RT_USING_USER_MAIN
 #define RT_MAIN_THREAD_STACK_SIZE    1024
 
-/* Debug Configuration */
+/* Debug */
 #define RT_DEBUG_INIT                0
 
-/* IPC Configuration */
+/* IPC */
 #define RT_USING_SEMAPHORE
-#define RT_USING_MUTEX
-#define RT_USING_EVENT
+/* #define RT_USING_MUTEX */
+/* #define RT_USING_EVENT */
 #define RT_USING_MAILBOX
-#define RT_USING_MESSAGEQUEUE
+/* #define RT_USING_MESSAGEQUEUE */
 
-/* Memory Management */
-#define RT_USING_HEAP
-#define RT_USING_SMALL_MEM
+/* Memory Management — heap disabled (matches official example).
+   User threads use static stacks via rt_thread_init(). */
+/* #define RT_USING_HEAP */
+/* #define RT_USING_SMALL_MEM */
 
-/* Software Timer */
-#define RT_USING_TIMER_SOFT
-#define RT_TIMER_THREAD_PRIO         4
-#define RT_TIMER_THREAD_STACK_SIZE   512
+/* Software Timer — disabled (matches official example) */
+/* #define RT_USING_TIMER_SOFT */
 
-/* Console Configuration */
+/* Console */
 #define RT_USING_CONSOLE
 #define RT_CONSOLEBUF_SIZE           128
 
-/*
- * FinSH Shell — disabled by default due to ARMCC V5 C90 limitations.
- * MSH_CMD_EXPORT macros with multi-word descriptions are not C90 compatible.
- * Enable only if using ARMCC V6 or GCC.
- */
+/* FinSH — disabled (ARMCC V5 C90 incompatible) */
 /* #define RT_USING_FINSH */
 
 #endif /* __RTTHREAD_CFG_H__ */

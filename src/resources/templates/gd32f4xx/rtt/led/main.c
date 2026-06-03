@@ -3,32 +3,23 @@
 #include "main.h"
 #include <rtthread.h>
 
+static struct rt_thread led_thread;
+static rt_uint8_t led_thread_stack[512];
+
 static void led_thread_entry(void *parameter)
 {
-    while (1)
-    {
+    while (1) {
         /* TODO: toggle your LED pin here */
         rt_thread_mdelay(500);
     }
 }
 
-int led_init(void)
-{
-    /* TODO: initialize LED GPIO here */
-    return 0;
-}
-INIT_APP_EXPORT(led_init);
-
 int main(void)
 {
-    rt_thread_t tid;
-
     nvic_config();
-
-    tid = rt_thread_create(
-        "led", led_thread_entry, RT_NULL, 512, 20, 10);
-    if (tid != RT_NULL)
-        rt_thread_startup(tid);
-
+    /* TODO: initialize LED GPIO here */
+    rt_thread_init(&led_thread, "led", led_thread_entry, RT_NULL,
+                   led_thread_stack, sizeof(led_thread_stack), 20, 10);
+    rt_thread_startup(&led_thread);
     return 0;
 }

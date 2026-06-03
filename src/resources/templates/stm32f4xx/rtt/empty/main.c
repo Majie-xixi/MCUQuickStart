@@ -6,9 +6,7 @@
 int main(void)
 {
     nvic_config();
-
-    while (1)
-    {
+    while (1) {
         rt_thread_mdelay(1000);
     }
 }
