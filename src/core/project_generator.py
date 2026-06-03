@@ -152,6 +152,18 @@ class ProjectGenerator:
             if src.exists():
                 (rtt_dir / fname).write_bytes(src.read_bytes())
 
+        # Patch components.c: ARMCC V5 defines __CC_ARM, not __ARMCC_VERSION.
+        # Without this fix, $Sub$$main hook won't compile → rtthread_startup()
+        # is never called → scheduler never starts.
+        components_c = rtt_dir / "components.c"
+        if components_c.exists():
+            content = components_c.read_text(encoding="utf-8")
+            content = content.replace(
+                "#ifdef __ARMCC_VERSION",
+                "#if defined(__ARMCC_VERSION) || defined(__CC_ARM)"
+            )
+            components_c.write_text(content, encoding="utf-8")
+
         # Copy headers from include/
         inc_src = sdk_base / "include"
         inc_dst = rtt_dir / "include"
