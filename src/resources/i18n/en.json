@@ -16,6 +16,7 @@
   "generate": "Generate Project",
   "log": "Log",
   "generating": "Generating {proj_name} for {chip} ({tmpl_type})...",
+  "generating_btn": "Generating...",
   "done": "Done! Project created at: {path}",
   "error": "Error",
   "success": "Success",

@@ -16,6 +16,7 @@
   "generate": "生成工程",
   "log": "日志",
   "generating": "正在生成 {proj_name}，芯片 {chip} ({tmpl_type})...",
+  "generating_btn": "生成中...",
   "done": "完成！工程已创建于：{path}",
   "error": "错误",
   "success": "成功",

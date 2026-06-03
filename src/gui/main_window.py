@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QComboBox, QPushButton,
     QTextEdit, QGroupBox, QRadioButton, QFileDialog, QMessageBox,
-    QCheckBox,
+    QCheckBox, QProgressBar, QApplication,
 )
 from PyQt6.QtCore import Qt
 from src.core.chip_db import ChipDatabase
@@ -171,6 +171,14 @@ class MainWindow(QMainWindow):
         self._gen_btn.clicked.connect(self._on_generate)
         layout.addWidget(self._gen_btn)
 
+        # --- Progress Bar ---
+        self._progress = QProgressBar()
+        self._progress.setRange(0, 0)  # indeterminate mode
+        self._progress.setVisible(False)
+        self._progress.setMaximumHeight(8)
+        self._progress.setTextVisible(False)
+        layout.addWidget(self._progress)
+
         # --- Log Output ---
         self._log_group = QGroupBox()
         log_layout = QVBoxLayout(self._log_group)
@@ -297,6 +305,12 @@ class MainWindow(QMainWindow):
 
         build_system = "both" if self._lib_gcc.isChecked() else "keil"
 
+        # Disable button and show progress
+        self._gen_btn.setEnabled(False)
+        self._gen_btn.setText(self._tr("generating_btn"))
+        self._progress.setVisible(True)
+        QApplication.processEvents()
+
         try:
             output_path = output_dir / proj_name
             self._log_msg(self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type))
@@ -308,3 +322,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self._log_msg(f"Error: {e}")
             QMessageBox.critical(self, self._tr("error"), str(e))
+        finally:
+            self._gen_btn.setEnabled(True)
+            self._progress.setVisible(False)
+            self._gen_btn.setText(self._tr("generate"))
