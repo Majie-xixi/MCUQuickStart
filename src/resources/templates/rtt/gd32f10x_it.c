@@ -28,14 +28,9 @@ void SysTick_Handler(void)
     rt_interrupt_leave();
 }
 
-void PendSV_Handler(void)
-{
-    rt_hw_context_switch_interrupt();
-}
-
-void SVC_Handler(void)
-{
-    rt_hw_context_switch_to();
-}
+/*
+ * PendSV_Handler and SVC_Handler are implemented in context_rvds.S
+ * (assembled from RT-Thread_PORT group). Do NOT redefine here.
+ */
 
 #endif
