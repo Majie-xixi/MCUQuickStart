@@ -20,10 +20,7 @@ RT_WEAK void *rt_heap_end_get(void)
 
 void rt_hw_board_init(void)
 {
-    /* System clock is configured by system_{{CHIP_FAMILY}}.c already.
-       Just update the global variable. */
-    SystemCoreClockUpdate();
-
+    /* SystemCoreClock is already set by SystemInit() in startup */
     /* Configure SysTick for RT-Thread tick */
     SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
@@ -38,7 +35,7 @@ void rt_hw_board_init(void)
 
 #ifdef RT_USING_CONSOLE
 
-static void console_uart_init(void)
+static int console_uart_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
     USART_InitTypeDef USART_InitStructure;
@@ -64,6 +61,7 @@ static void console_uart_init(void)
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init({{DEBUG_USART}}, &USART_InitStructure);
     USART_Cmd({{DEBUG_USART}}, ENABLE);
+    return 0;
 }
 INIT_BOARD_EXPORT(console_uart_init);
 

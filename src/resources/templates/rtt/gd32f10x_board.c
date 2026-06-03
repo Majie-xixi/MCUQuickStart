@@ -20,7 +20,8 @@ RT_WEAK void *rt_heap_end_get(void)
 
 void rt_hw_board_init(void)
 {
-    SystemCoreClockUpdate();
+    /* SystemCoreClock is already set by SystemInit() in startup before main().
+       Configure SysTick to generate RT-Thread tick interrupt. */
     SysTick_Config(SystemCoreClock / RT_TICK_PER_SECOND);
 
 #ifdef RT_USING_COMPONENTS_INIT
@@ -34,7 +35,7 @@ void rt_hw_board_init(void)
 
 #ifdef RT_USING_CONSOLE
 
-static void console_uart_init(void)
+static int console_uart_init(void)
 {
     rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_{{DEBUG_USART}});
@@ -54,6 +55,7 @@ static void console_uart_init(void)
     usart_receive_config({{DEBUG_USART}}, USART_RECEIVE_ENABLE);
     usart_transmit_config({{DEBUG_USART}}, USART_TRANSMIT_ENABLE);
     usart_enable({{DEBUG_USART}});
+    return 0;
 }
 INIT_BOARD_EXPORT(console_uart_init);
 
