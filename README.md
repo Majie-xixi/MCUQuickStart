@@ -10,7 +10,7 @@ Every embedded developer knows the pain: you get a new board, fire up Keil, and 
 - Fill in preprocessor defines, fix compilation errors from mismatched macros
 - Repeat the entire process every time you switch to a different MCU
 
-And if you want **FreeRTOS**? Multiply the pain by ten:
+And if you want **FreeRTOS** or **RT-Thread Nano**? Multiply the pain by ten:
 
 - Dig through FreeRTOS.org to find the right kernel version that matches your chip
 - Scroll through forum posts and tutorials to figure out which port files you need (RVDS? GCC? IAR?)
@@ -38,8 +38,10 @@ And if you want to use **GCC + CMake** with CLion or VS Code? Brace yourself for
 
 **Why spend days porting to GCC when a checkbox can do it for you?**
 
+**RT-Thread Nano** is another beast entirely — the official examples target GCC/ARMCC V6, but your Keil project likely compiles with ARMCC V5 C90. C99 variable declarations, FinSH command macros with spaces in parameters, `$Sub$$main` linker tricks that don't work under Microlib — every C99-ism becomes a compile error. Then there's `board.c`: you don't just copy it — you have to rewrite it from HAL to Standard Peripheral Library for your specific chip family. And when it finally compiles, the scheduler hangs on first context switch because FPU, NVIC priorities, Microlib, or heap settings are wrong. **Three full days of debugging for a blinking LED.**
 
-**MCUQuickStart automates all of this. Bare-metal, FreeRTOS, GCC + CMake — pick your chip, pick a template, check a box, click generate. A compilable Keil5 or CLion/VS Code project in under a minute.**
+
+**MCUQuickStart automates all of this. Bare-metal, FreeRTOS, RT-Thread Nano, GCC + CMake — pick your芯片, pick a template, check a box, click generate. A compilable Keil5 or CLion/VS Code project in under a minute.**
 
 ---
 
@@ -55,6 +57,7 @@ And if you want to use **GCC + CMake** with CLion or VS Code? Brace yourself for
 | Guess the wrong `#define` and debug compile errors | Per-chip defines, verified correct |
 | Spend days porting GCC: write CMake + linker script + hunt startup files | Check a box \u2014 dual-build project, Keil + GCC |
 | Spend 2 days porting FreeRTOS, fighting SysTick conflicts | Check a box — kernel, port, heap, config all done |
+| Spend 3 days porting RT-Thread Nano, rewriting board.c from HAL to SPL, debugging C90 compile errors and PendSV crashes | Check a box — board.c, rtconfig.h, interrupt stubs, kernel all done |
 
 ### Real-World Scenarios
 
@@ -62,9 +65,19 @@ And if you want to use **GCC + CMake** with CLion or VS Code? Brace yourself for
 - You need to compare peripheral driver APIs between STM32F1 and GD32F1 — **generate two projects with two clicks**
 - A new team member joins and has never set up a Keil project — **give them the exe, zero ramp-up**
 - You want to try FreeRTOS on a new chip — instead of spending days finding port files, writing config, debugging SysTick conflicts, and hunting linker errors — **check a box, done in seconds**
+- You want to try RT-Thread Nano — instead of rewriting board.c from HAL to SPL, fighting C90 compile errors, and debugging PendSV crashes — **check a box, done in seconds**
 - Your board has a different crystal than the SDK default — instead of reading the datasheet to recalculate PLL parameters — **pick 8MHz or 25MHz from a dropdown\n- You prefer coding in CLion or VS Code, but the new chip only has Keil project templates \u2014 **check \"GCC + CMake\" and open the project in your favorite IDE instantly****
 
 ---
+
+## What's New in v1.3.0
+
+| Feature | What it does |
+|---------|--------------|
+| **RT-Thread Nano One-Click** | Check a box to generate an RT-Thread Nano project. Auto-generates `board.c` (HAL→Standard Peripheral Library adapted), `rtconfig.h`, interrupt stubs, and 3 application templates. Kernel, FinSH, mem/slab/memheap — all wired up. Mutually exclusive with FreeRTOS |
+| **ARMCC V5 C90 Battle-Tested** | RT-Thread source targets GCC/ARMCC V6. 10+ C90 compatibility fixes baked into templates: `RT_USING_LIBC`, FinSH disabled for C90, `$Sub$$main`/Microlib awareness, C99 mode, static heap, FPU/NVIC config — every trap we hit is now handled |
+| **SDK Auto-Extract** | `.zip` and `.7z` archives in the SDK directory are auto-extracted on first run. No manual unzipping |
+| **About Dialog** | About button with project intro + GitHub/Gitee links, bilingual |
 
 ## What's New in v1.1.0
 
@@ -129,6 +142,7 @@ Place these official SDK packages in a single folder:
 | GD32F10x_Firmware_Library | GD32F1 series |
 | GD32F4xx_Firmware_Library | GD32F4 series |
 | FreeRTOS Kernel V10.x | RTOS projects *(optional)* |
+| RT-Thread Nano V3.x | RT-Thread projects *(optional)* |
 
 The tool auto-detects the correct subfolder — no renaming needed.
 
@@ -141,7 +155,7 @@ The tool auto-detects the correct subfolder — no renaming needed.
 3. **Set SDK Root** — Browse and select the SDK directory
 4. **Pick a Chip** — Select series on the left, specific model on the right
 5. **Pick a Template** — Empty / LED Blink / UART Printf
-6. **Optional** — Check FreeRTOS, select external crystal frequency
+6. **Optional** — Check FreeRTOS or RT-Thread Nano (mutually exclusive), select external crystal frequency, check GCC+CMake for CLion/VS Code
 7. **Generate** — Name your project, choose output directory, click "Generate Project"
 8. **Compile** — Open `MDK-ARM/<project>.uvprojx` in Keil5, hit build — it just works
 
