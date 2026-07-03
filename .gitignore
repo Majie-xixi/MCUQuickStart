@@ -9,7 +9,9 @@ dist/
 build/
 .download_cache.json
 check_downloads.py
-docs/
+docs/*
+!docs/images/
+!docs/images/**
 *.stackdump
 .agents/
 .claude/
