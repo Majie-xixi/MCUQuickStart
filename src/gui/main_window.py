@@ -36,8 +36,8 @@ from src.core.sdk_manager import SDKManager
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(860, 780)
-        self.resize(960, 820)
+        self.setMinimumSize(960, 860)
+        self.resize(1040, 920)
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
         self._i18n.set_language("en")
