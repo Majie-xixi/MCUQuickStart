@@ -8,6 +8,7 @@ a = Analysis(
         ('src/resources/chips', 'src/resources/chips'),
         ('src/resources/templates', 'src/resources/templates'),
         ('src/resources/i18n', 'src/resources/i18n'),
+        ('src/resources/icons', 'src/resources/icons'),
     ],
     hiddenimports=['PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets'],
     hookspath=[],
