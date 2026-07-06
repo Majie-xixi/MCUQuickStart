@@ -5,6 +5,7 @@ import html
 from datetime import datetime
 from pathlib import Path
 
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -29,14 +30,18 @@ from PyQt6.QtWidgets import (
 from src.core.chip_db import ChipDatabase
 from src.core.i18n import I18n
 from src.core.project_generator import ProjectGenerator
+from src.core.project_validator import ProjectValidator
 from src.core.sdk_manager import SDKManager
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(860, 780)
-        self.resize(960, 820)
+        self.setMinimumSize(960, 860)
+        self.resize(1040, 920)
+        self.setWindowIcon(
+            QIcon(str(Path(__file__).parent.parent / "resources" / "icons" / "app.ico"))
+        )
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
         self._i18n.set_language("en")
@@ -50,6 +55,7 @@ class MainWindow(QMainWindow):
             Path(__file__).parent.parent / "resources" / "templates",
             self._sdk,
         )
+        self._validator = ProjectValidator()
 
         self._build_ui()
         self._apply_theme()
@@ -261,6 +267,12 @@ class MainWindow(QMainWindow):
         action_row.addWidget(self._gen_btn)
         layout.addLayout(action_row)
 
+        self._result_banner = QLabel()
+        self._result_banner.setObjectName("resultBanner")
+        self._result_banner.setVisible(False)
+        self._result_banner.setWordWrap(True)
+        layout.addWidget(self._result_banner)
+
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
         separator.setObjectName("separator")
@@ -454,6 +466,22 @@ class MainWindow(QMainWindow):
                 background: #d8e0ea;
                 max-height: 1px;
             }
+            QLabel#resultBanner {
+                min-height: 34px;
+                padding: 7px 12px;
+                border-radius: 7px;
+                font-weight: 700;
+            }
+            QLabel#resultBanner[state="success"] {
+                color: #14532d;
+                background: #dcfce7;
+                border: 1px solid #86efac;
+            }
+            QLabel#resultBanner[state="warn"] {
+                color: #713f12;
+                background: #fef3c7;
+                border: 1px solid #facc15;
+            }
             QTextEdit#logView {
                 border: 1px solid #d8e0ea;
                 border-radius: 8px;
@@ -461,7 +489,7 @@ class MainWindow(QMainWindow):
                 color: #17202b;
                 padding: 10px;
                 font-family: "Cascadia Mono", Consolas, monospace;
-                font-size: 12px;
+                font-size: 13px;
             }
             """
         else:
@@ -633,6 +661,22 @@ class MainWindow(QMainWindow):
                 background: #263343;
                 max-height: 1px;
             }
+            QLabel#resultBanner {
+                min-height: 34px;
+                padding: 7px 12px;
+                border-radius: 7px;
+                font-weight: 700;
+            }
+            QLabel#resultBanner[state="success"] {
+                color: #bbf7d0;
+                background: #123823;
+                border: 1px solid #1f8a55;
+            }
+            QLabel#resultBanner[state="warn"] {
+                color: #fde68a;
+                background: #3f2f12;
+                border: 1px solid #a16207;
+            }
             QTextEdit#logView {
                 border: 1px solid #233142;
                 border-radius: 8px;
@@ -640,7 +684,7 @@ class MainWindow(QMainWindow):
                 color: #d8e1ea;
                 padding: 10px;
                 font-family: "Cascadia Mono", Consolas, monospace;
-                font-size: 12px;
+                font-size: 13px;
             }
             """
         self.setStyleSheet(qss.replace("__CHEVRON__", chevron))
@@ -772,18 +816,27 @@ class MainWindow(QMainWindow):
             )
         now = datetime.now().strftime("%H:%M:%S")
         self._log.append(
-            "<div style='white-space:pre-wrap;'>"
+            "<div style='white-space:pre-wrap; line-height:1.35;'>"
             f"<span style='color:{time_color};'>{now}</span> "
             f"<span style='color:{badge_color}; font-weight:700;'>[{badge}]</span> "
             f"<span style='color:{text_color};'>{text}</span>"
             "</div>"
         )
 
-    def _set_busy(self, busy: bool):
+    def _set_busy(self, busy: bool, idle_text: str | None = None):
         self._gen_btn.setEnabled(not busy)
         self._progress.setVisible(busy)
-        self._status_label.setText(self._tr("generating_btn") if busy else self._tr("ready"))
+        self._status_label.setText(self._tr("generating_btn") if busy else (idle_text or self._tr("ready")))
         self._gen_btn.setText(self._tr("generating_btn") if busy else self._tr("generate"))
+        if busy:
+            self._result_banner.setVisible(False)
+
+    def _show_result_banner(self, text: str, state: str):
+        self._result_banner.setText(text)
+        self._result_banner.setProperty("state", state)
+        self._result_banner.style().unpolish(self._result_banner)
+        self._result_banner.style().polish(self._result_banner)
+        self._result_banner.setVisible(True)
 
     def _on_generate(self):
         sdk_root = self._sdk_root.text().strip()
@@ -852,10 +905,62 @@ class MainWindow(QMainWindow):
                 optional_libs=optional_libs,
                 build_system=build_system,
             )
+            self._set_busy(False, self._tr("done_status"))
             self._log_msg(self._tr("done", path=str(output_path)), "success")
-            QMessageBox.information(self, self._tr("success"), f"{output_path}")
+            issue_count = self._log_validation_report(
+                output_path,
+                proj_name,
+                chip_config,
+                optional_libs,
+                build_system,
+            )
+            if issue_count:
+                text = self._tr("report_issues", count=issue_count)
+                self._status_label.setText(text)
+                self._show_result_banner(text, "warn")
+            else:
+                text = self._tr("report_ok")
+                self._status_label.setText(text)
+                self._show_result_banner(text, "success")
         except Exception as exc:
             self._log_msg(f"Error: {exc}", "error")
             QMessageBox.critical(self, self._tr("error"), str(exc))
         finally:
-            self._set_busy(False)
+            if self._progress.isVisible():
+                self._set_busy(False)
+
+    def _log_validation_report(
+        self,
+        output_path: Path,
+        project_name: str,
+        chip_config: dict,
+        optional_libs: list[str],
+        build_system: str,
+    ) -> int:
+        results = self._validator.validate(
+            output_path,
+            project_name,
+            chip_config,
+            optional_libs=optional_libs,
+            build_system=build_system,
+        )
+        issue_count = sum(1 for item in results if item.status != "ok")
+        ok_count = len(results) - issue_count
+        summary_level = "warn" if issue_count else "success"
+        self._log_msg(
+            f"Generation report: {ok_count} passed, {issue_count} issue(s)",
+            summary_level,
+        )
+        for item in results:
+            if item.status == "ok":
+                level = "success"
+                badge = "OK"
+            elif item.status == "warn":
+                level = "warn"
+                badge = "WARN"
+            else:
+                level = "error"
+                badge = "ERROR"
+            detail = f" - {item.detail}" if item.detail else ""
+            self._log_msg(f"[CHECK] {badge} {item.name}{detail}", level)
+        return issue_count

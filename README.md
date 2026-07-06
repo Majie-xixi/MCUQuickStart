@@ -128,9 +128,17 @@ The GUI is built with PyQt6.
 
 ## License
 
-Free for personal, educational, and non-commercial use.
+MCUQuickStart is released under the GNU General Public License v3.0.
+See [LICENSE](LICENSE) for the full license text.
 
-Commercial use, including selling, bundling with paid products, or providing as a paid service, requires explicit permission from the author.
+This project does not redistribute vendor SDK packages. Generated projects may include
+files copied from the user's local STM32/GD32 SDK, FreeRTOS, or RT-Thread Nano
+installation, and those copied files remain subject to their original licenses.
+
+STM32 is a trademark of STMicroelectronics. GD32 is a trademark of GigaDevice.
+Keil and Arm are trademarks of Arm Limited. All trademarks are the property of
+their respective owners. MCUQuickStart is not affiliated with or endorsed by
+these companies.
 
 ## Star History
 
