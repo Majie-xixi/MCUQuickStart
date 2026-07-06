@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
 from src.core.chip_db import ChipDatabase
 from src.core.i18n import I18n
 from src.core.project_generator import ProjectGenerator
+from src.core.project_validator import ProjectValidator
 from src.core.sdk_manager import SDKManager
 
 
@@ -50,6 +51,7 @@ class MainWindow(QMainWindow):
             Path(__file__).parent.parent / "resources" / "templates",
             self._sdk,
         )
+        self._validator = ProjectValidator()
 
         self._build_ui()
         self._apply_theme()
@@ -853,9 +855,45 @@ class MainWindow(QMainWindow):
                 build_system=build_system,
             )
             self._log_msg(self._tr("done", path=str(output_path)), "success")
+            self._log_validation_report(
+                output_path,
+                proj_name,
+                chip_config,
+                optional_libs,
+                build_system,
+            )
             QMessageBox.information(self, self._tr("success"), f"{output_path}")
         except Exception as exc:
             self._log_msg(f"Error: {exc}", "error")
             QMessageBox.critical(self, self._tr("error"), str(exc))
         finally:
             self._set_busy(False)
+
+    def _log_validation_report(
+        self,
+        output_path: Path,
+        project_name: str,
+        chip_config: dict,
+        optional_libs: list[str],
+        build_system: str,
+    ):
+        self._log_msg("Generation report:", "info")
+        results = self._validator.validate(
+            output_path,
+            project_name,
+            chip_config,
+            optional_libs=optional_libs,
+            build_system=build_system,
+        )
+        for item in results:
+            if item.status == "ok":
+                level = "success"
+                badge = "OK"
+            elif item.status == "warn":
+                level = "warn"
+                badge = "WARN"
+            else:
+                level = "error"
+                badge = "ERROR"
+            detail = f" - {item.detail}" if item.detail else ""
+            self._log_msg(f"[CHECK] {badge} {item.name}{detail}", level)
