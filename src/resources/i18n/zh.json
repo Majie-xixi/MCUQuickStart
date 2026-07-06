@@ -36,7 +36,7 @@
   "help": "帮助",
   "about": "关于",
   "about_title": "关于 MCUQuickStart",
-  "about_text": "<h3>MCUQuickStart v1.2.0</h3><p>面向 STM32/GD32 ARM Cortex-M 单片机的一键工程模板生成工具。支持 Keil MDK、GCC+CMake、FreeRTOS 和 RT-Thread Nano。</p><p><b>GitHub:</b> <a href='https://github.com/Majie-xixi/MCUQuickStart'>github.com/Majie-xixi/MCUQuickStart</a></p><p><b>Gitee:</b> <a href='https://gitee.com/mj_yyfddca/mcu_quick_start'>gitee.com/mj_yyfddca/mcu_quick_start</a></p>",
+  "about_text": "<h3>MCUQuickStart v1.3.0</h3><p>面向 STM32/GD32 ARM Cortex-M 单片机的一键工程模板生成工具。支持 Keil MDK、GCC+CMake、FreeRTOS 和 RT-Thread Nano。</p><p><b>GitHub:</b> <a href='https://github.com/Majie-xixi/MCUQuickStart'>github.com/Majie-xixi/MCUQuickStart</a></p><p><b>Gitee:</b> <a href='https://gitee.com/mj_yyfddca/mcu_quick_start'>gitee.com/mj_yyfddca/mcu_quick_start</a></p>",
   "help_text": "<h3>MCUQuickStart 使用方法</h3><ol><li><b>设置 SDK 根目录</b>: 将芯片固件包和可选库放在同一目录下，工具会自动匹配。.zip/.7z 压缩包会自动解压。</li><li><b>选择芯片</b>: 先选系列，再选具体型号。</li><li><b>项目名称与输出目录</b>: 生成的工程会放在输出目录下的同名文件夹中。</li><li><b>选择代码模板</b>: 空工程、LED 闪烁或串口打印。</li><li><b>可选库</b>: FreeRTOS 和 RT-Thread Nano 二选一。</li><li><b>外部晶振</b>: 选择板子实际焊接的晶振频率。</li><li><b>GCC + CMake</b>: 勾选后同时生成 CMakeLists.txt，适合 CLion / VS Code。</li><li><b>生成工程</b>: 在 Keil MDK 中打开 .uvprojx 即可编译运行。</li></ol>",
   "optional_libs": "可选库",
   "lib_freertos": "FreeRTOS (实时操作系统)",
