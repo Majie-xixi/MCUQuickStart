@@ -5,6 +5,7 @@ import html
 from datetime import datetime
 from pathlib import Path
 
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -38,6 +39,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setMinimumSize(960, 860)
         self.resize(1040, 920)
+        self.setWindowIcon(
+            QIcon(str(Path(__file__).parent.parent / "resources" / "icons" / "app.ico"))
+        )
 
         self._i18n = I18n(Path(__file__).parent.parent / "resources" / "i18n")
         self._i18n.set_language("en")
