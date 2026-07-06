@@ -781,10 +781,10 @@ class MainWindow(QMainWindow):
             "</div>"
         )
 
-    def _set_busy(self, busy: bool):
+    def _set_busy(self, busy: bool, idle_text: str | None = None):
         self._gen_btn.setEnabled(not busy)
         self._progress.setVisible(busy)
-        self._status_label.setText(self._tr("generating_btn") if busy else self._tr("ready"))
+        self._status_label.setText(self._tr("generating_btn") if busy else (idle_text or self._tr("ready")))
         self._gen_btn.setText(self._tr("generating_btn") if busy else self._tr("generate"))
 
     def _on_generate(self):
@@ -854,20 +854,25 @@ class MainWindow(QMainWindow):
                 optional_libs=optional_libs,
                 build_system=build_system,
             )
+            self._set_busy(False, self._tr("done_status"))
             self._log_msg(self._tr("done", path=str(output_path)), "success")
-            self._log_validation_report(
+            issue_count = self._log_validation_report(
                 output_path,
                 proj_name,
                 chip_config,
                 optional_libs,
                 build_system,
             )
-            QMessageBox.information(self, self._tr("success"), f"{output_path}")
+            if issue_count:
+                self._status_label.setText(self._tr("report_issues", count=issue_count))
+            else:
+                self._status_label.setText(self._tr("report_ok"))
         except Exception as exc:
             self._log_msg(f"Error: {exc}", "error")
             QMessageBox.critical(self, self._tr("error"), str(exc))
         finally:
-            self._set_busy(False)
+            if self._progress.isVisible():
+                self._set_busy(False)
 
     def _log_validation_report(
         self,
@@ -876,14 +881,20 @@ class MainWindow(QMainWindow):
         chip_config: dict,
         optional_libs: list[str],
         build_system: str,
-    ):
-        self._log_msg("Generation report:", "info")
+    ) -> int:
         results = self._validator.validate(
             output_path,
             project_name,
             chip_config,
             optional_libs=optional_libs,
             build_system=build_system,
+        )
+        issue_count = sum(1 for item in results if item.status != "ok")
+        ok_count = len(results) - issue_count
+        summary_level = "warn" if issue_count else "success"
+        self._log_msg(
+            f"Generation report: {ok_count} passed, {issue_count} issue(s)",
+            summary_level,
         )
         for item in results:
             if item.status == "ok":
@@ -897,3 +908,4 @@ class MainWindow(QMainWindow):
                 badge = "ERROR"
             detail = f" - {item.detail}" if item.detail else ""
             self._log_msg(f"[CHECK] {badge} {item.name}{detail}", level)
+        return issue_count
