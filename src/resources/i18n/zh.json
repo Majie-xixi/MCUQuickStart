@@ -23,6 +23,8 @@
   "done_status": "完成",
   "report_ok": "项目创建成功 - 校验全部通过",
   "report_issues": "项目已创建 - 发现 {count} 个问题",
+  "open_folder": "打开输出目录",
+  "open_folder_missing": "输出目录不存在: {path}",
   "error": "错误",
   "success": "成功",
   "err_sdk_root": "请先设置 SDK 根目录。",

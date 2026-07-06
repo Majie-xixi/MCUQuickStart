@@ -23,6 +23,8 @@
   "done_status": "Done",
   "report_ok": "Project created successfully - all checks passed",
   "report_issues": "Project created - {count} issue(s) found",
+  "open_folder": "Open Folder",
+  "open_folder_missing": "Output folder not found: {path}",
   "error": "Error",
   "success": "Success",
   "err_sdk_root": "Please set the SDK root directory.",

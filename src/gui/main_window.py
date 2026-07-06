@@ -5,7 +5,8 @@ import html
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QDesktopServices, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -56,6 +57,7 @@ class MainWindow(QMainWindow):
             self._sdk,
         )
         self._validator = ProjectValidator()
+        self._last_output_path: Path | None = None
 
         self._build_ui()
         self._apply_theme()
@@ -267,11 +269,25 @@ class MainWindow(QMainWindow):
         action_row.addWidget(self._gen_btn)
         layout.addLayout(action_row)
 
+        self._result_panel = QFrame()
+        self._result_panel.setObjectName("resultPanel")
+        self._result_panel.setVisible(False)
+        result_layout = QHBoxLayout(self._result_panel)
+        result_layout.setContentsMargins(14, 9, 10, 9)
+        result_layout.setSpacing(10)
+
         self._result_banner = QLabel()
         self._result_banner.setObjectName("resultBanner")
-        self._result_banner.setVisible(False)
         self._result_banner.setWordWrap(True)
-        layout.addWidget(self._result_banner)
+        result_layout.addWidget(self._result_banner, 1)
+
+        self._open_output_btn = QPushButton()
+        self._open_output_btn.setObjectName("resultActionButton")
+        self._open_output_btn.setMinimumWidth(118)
+        self._open_output_btn.setMinimumHeight(34)
+        self._open_output_btn.clicked.connect(self._open_output_folder)
+        result_layout.addWidget(self._open_output_btn)
+        layout.addWidget(self._result_panel)
 
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
@@ -466,21 +482,41 @@ class MainWindow(QMainWindow):
                 background: #d8e0ea;
                 max-height: 1px;
             }
-            QLabel#resultBanner {
-                min-height: 34px;
-                padding: 7px 12px;
+            QFrame#resultPanel {
                 border-radius: 7px;
+                border: 1px solid #cbd5e1;
+            }
+            QFrame#resultPanel[state="success"] {
+                background: #ecfdf3;
+                border-color: #86efac;
+            }
+            QFrame#resultPanel[state="warn"] {
+                background: #fffbeb;
+                border-color: #facc15;
+            }
+            QLabel#resultBanner {
+                background: transparent;
+                border: 0;
                 font-weight: 700;
             }
             QLabel#resultBanner[state="success"] {
                 color: #14532d;
-                background: #dcfce7;
-                border: 1px solid #86efac;
             }
             QLabel#resultBanner[state="warn"] {
                 color: #713f12;
-                background: #fef3c7;
-                border: 1px solid #facc15;
+            }
+            QPushButton#resultActionButton {
+                min-height: 32px;
+                border-radius: 6px;
+                padding: 4px 14px;
+                background: #ffffff;
+                border: 1px solid #bbf7d0;
+                color: #14532d;
+                font-weight: 700;
+            }
+            QPushButton#resultActionButton:hover {
+                background: #f0fdf4;
+                border-color: #4ade80;
             }
             QTextEdit#logView {
                 border: 1px solid #d8e0ea;
@@ -661,21 +697,41 @@ class MainWindow(QMainWindow):
                 background: #263343;
                 max-height: 1px;
             }
-            QLabel#resultBanner {
-                min-height: 34px;
-                padding: 7px 12px;
+            QFrame#resultPanel {
                 border-radius: 7px;
+                border: 1px solid #263343;
+            }
+            QFrame#resultPanel[state="success"] {
+                background: #123823;
+                border-color: #1f8a55;
+            }
+            QFrame#resultPanel[state="warn"] {
+                background: #3f2f12;
+                border-color: #a16207;
+            }
+            QLabel#resultBanner {
+                background: transparent;
+                border: 0;
                 font-weight: 700;
             }
             QLabel#resultBanner[state="success"] {
                 color: #bbf7d0;
-                background: #123823;
-                border: 1px solid #1f8a55;
             }
             QLabel#resultBanner[state="warn"] {
                 color: #fde68a;
-                background: #3f2f12;
-                border: 1px solid #a16207;
+            }
+            QPushButton#resultActionButton {
+                min-height: 32px;
+                border-radius: 6px;
+                padding: 4px 14px;
+                background: #0d141d;
+                border: 1px solid #1f8a55;
+                color: #bbf7d0;
+                font-weight: 700;
+            }
+            QPushButton#resultActionButton:hover {
+                background: #163021;
+                border-color: #24b487;
             }
             QTextEdit#logView {
                 border: 1px solid #233142;
@@ -717,6 +773,7 @@ class MainWindow(QMainWindow):
         self._tmpl_led.setText(self._tr("tmpl_led"))
         self._tmpl_uart.setText(self._tr("tmpl_uart"))
         self._gen_btn.setText(self._tr("generate"))
+        self._open_output_btn.setText(self._tr("open_folder"))
         self._log_title.setText(self._tr("log"))
         self._clear_log_btn.setText(self._tr("clear_log"))
         self._lib_title.setText(self._tr("optional_libs"))
@@ -772,6 +829,16 @@ class MainWindow(QMainWindow):
 
     def _clear_log(self):
         self._log.clear()
+
+    def _open_output_folder(self):
+        if self._last_output_path and self._last_output_path.exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._last_output_path)))
+            return
+        if self._last_output_path:
+            self._log_msg(
+                self._tr("open_folder_missing", path=str(self._last_output_path)),
+                "error",
+            )
 
     def _log_msg(self, msg: str, level: str = "info"):
         if self._theme == "light":
@@ -829,14 +896,18 @@ class MainWindow(QMainWindow):
         self._status_label.setText(self._tr("generating_btn") if busy else (idle_text or self._tr("ready")))
         self._gen_btn.setText(self._tr("generating_btn") if busy else self._tr("generate"))
         if busy:
-            self._result_banner.setVisible(False)
+            self._last_output_path = None
+            self._result_panel.setVisible(False)
 
     def _show_result_banner(self, text: str, state: str):
         self._result_banner.setText(text)
+        self._result_panel.setProperty("state", state)
         self._result_banner.setProperty("state", state)
+        self._result_panel.style().unpolish(self._result_panel)
+        self._result_panel.style().polish(self._result_panel)
         self._result_banner.style().unpolish(self._result_banner)
         self._result_banner.style().polish(self._result_banner)
-        self._result_banner.setVisible(True)
+        self._result_panel.setVisible(True)
 
     def _on_generate(self):
         sdk_root = self._sdk_root.text().strip()
@@ -906,6 +977,7 @@ class MainWindow(QMainWindow):
                 build_system=build_system,
             )
             self._set_busy(False, self._tr("done_status"))
+            self._last_output_path = output_path
             self._log_msg(self._tr("done", path=str(output_path)), "success")
             issue_count = self._log_validation_report(
                 output_path,
