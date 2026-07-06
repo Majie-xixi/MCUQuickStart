@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import html
+import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -31,15 +33,17 @@ from PyQt6.QtWidgets import (
 from src.core.chip_db import ChipDatabase
 from src.core.i18n import I18n
 from src.core.project_generator import ProjectGenerator
-from src.core.project_validator import ProjectValidator
+from src.core.project_validator import CheckResult, ProjectValidator
 from src.core.sdk_manager import SDKManager
 
 
 class MainWindow(QMainWindow):
+    APP_VERSION = "v1.3.0"
+
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(960, 860)
-        self.resize(1040, 920)
+        self.setMinimumSize(980, 900)
+        self.resize(1080, 960)
         self.setWindowIcon(
             QIcon(str(Path(__file__).parent.parent / "resources" / "icons" / "app.ico"))
         )
@@ -58,6 +62,8 @@ class MainWindow(QMainWindow):
         )
         self._validator = ProjectValidator()
         self._last_output_path: Path | None = None
+        self._last_validation_results: list[CheckResult] = []
+        self._last_generation_context: dict[str, str] = {}
 
         self._build_ui()
         self._apply_theme()
@@ -129,7 +135,7 @@ class MainWindow(QMainWindow):
 
         self._sdk_group = QFrame()
         self._sdk_group.setObjectName("card")
-        self._sdk_group.setFixedHeight(112)
+        self._sdk_group.setFixedHeight(142)
         sdk_layout = QVBoxLayout(self._sdk_group)
         sdk_layout.setContentsMargins(20, 14, 20, 14)
         sdk_layout.setSpacing(8)
@@ -148,6 +154,7 @@ class MainWindow(QMainWindow):
         root_row.addWidget(self._root_label)
         self._sdk_root = QLineEdit(self._sdk.get_path("SDK_ROOT"))
         self._sdk_root.setMinimumWidth(260)
+        self._sdk_root.textChanged.connect(self._update_sdk_match)
         root_row.addWidget(self._sdk_root, 1)
         self._root_btn = QPushButton()
         self._root_btn.setObjectName("secondaryButton")
@@ -155,6 +162,11 @@ class MainWindow(QMainWindow):
         self._root_btn.clicked.connect(self._browse_sdk)
         root_row.addWidget(self._root_btn)
         sdk_layout.addLayout(root_row)
+
+        self._sdk_match_label = QLabel()
+        self._sdk_match_label.setObjectName("matchText")
+        self._sdk_match_label.setWordWrap(True)
+        sdk_layout.addWidget(self._sdk_match_label)
         main_grid.addWidget(self._sdk_group)
 
         self._proj_group = QFrame()
@@ -181,6 +193,7 @@ class MainWindow(QMainWindow):
         self._chip_label = QLabel()
         self._chip_label.setObjectName("fieldLabel")
         self._chip_combo = QComboBox()
+        self._chip_combo.currentTextChanged.connect(self._update_sdk_match)
         self._name_label = QLabel()
         self._name_label.setObjectName("fieldLabel")
         self._proj_name = QLineEdit("MyProject")
@@ -276,10 +289,19 @@ class MainWindow(QMainWindow):
         result_layout.setContentsMargins(14, 9, 10, 9)
         result_layout.setSpacing(10)
 
+        result_text_box = QVBoxLayout()
+        result_text_box.setSpacing(2)
+
         self._result_banner = QLabel()
         self._result_banner.setObjectName("resultBanner")
         self._result_banner.setWordWrap(True)
-        result_layout.addWidget(self._result_banner, 1)
+        result_text_box.addWidget(self._result_banner)
+
+        self._result_details = QLabel()
+        self._result_details.setObjectName("resultDetails")
+        self._result_details.setWordWrap(True)
+        result_text_box.addWidget(self._result_details)
+        result_layout.addLayout(result_text_box, 1)
 
         self._open_output_btn = QPushButton()
         self._open_output_btn.setObjectName("resultActionButton")
@@ -299,6 +321,19 @@ class MainWindow(QMainWindow):
         self._log_title.setObjectName("sectionTitle")
         log_header.addWidget(self._log_title)
         log_header.addStretch()
+
+        self._copy_diag_btn = QPushButton()
+        self._copy_diag_btn.setObjectName("secondaryButton")
+        self._copy_diag_btn.setMinimumWidth(128)
+        self._copy_diag_btn.clicked.connect(self._copy_diagnostics)
+        log_header.addWidget(self._copy_diag_btn)
+
+        self._save_log_btn = QPushButton()
+        self._save_log_btn.setObjectName("secondaryButton")
+        self._save_log_btn.setMinimumWidth(92)
+        self._save_log_btn.clicked.connect(self._save_log)
+        log_header.addWidget(self._save_log_btn)
+
         self._clear_log_btn = QPushButton()
         self._clear_log_btn.setObjectName("secondaryButton")
         self._clear_log_btn.setMinimumWidth(76)
@@ -332,6 +367,16 @@ class MainWindow(QMainWindow):
             QLabel#statusText, QLabel#hintText {
                 color: #64748b;
                 font-size: 12px;
+            }
+            QLabel#matchText {
+                color: #475569;
+                font-size: 12px;
+            }
+            QLabel#matchText[state="ok"] {
+                color: #15803d;
+            }
+            QLabel#matchText[state="warn"] {
+                color: #a16207;
             }
             QLabel#fieldLabel {
                 color: #334155;
@@ -505,6 +550,13 @@ class MainWindow(QMainWindow):
             QLabel#resultBanner[state="warn"] {
                 color: #713f12;
             }
+            QLabel#resultDetails {
+                color: #166534;
+                font-size: 12px;
+            }
+            QLabel#resultDetails[state="warn"] {
+                color: #854d0e;
+            }
             QPushButton#resultActionButton {
                 min-height: 32px;
                 border-radius: 6px;
@@ -544,6 +596,16 @@ class MainWindow(QMainWindow):
             QLabel#statusText, QLabel#hintText {
                 color: #8b9aae;
                 font-size: 12px;
+            }
+            QLabel#matchText {
+                color: #91a3b8;
+                font-size: 12px;
+            }
+            QLabel#matchText[state="ok"] {
+                color: #86efac;
+            }
+            QLabel#matchText[state="warn"] {
+                color: #fcd34d;
             }
             QLabel#fieldLabel {
                 color: #aebbd0;
@@ -720,6 +782,13 @@ class MainWindow(QMainWindow):
             QLabel#resultBanner[state="warn"] {
                 color: #fde68a;
             }
+            QLabel#resultDetails {
+                color: #bbf7d0;
+                font-size: 12px;
+            }
+            QLabel#resultDetails[state="warn"] {
+                color: #fde68a;
+            }
             QPushButton#resultActionButton {
                 min-height: 32px;
                 border-radius: 6px;
@@ -775,6 +844,8 @@ class MainWindow(QMainWindow):
         self._gen_btn.setText(self._tr("generate"))
         self._open_output_btn.setText(self._tr("open_folder"))
         self._log_title.setText(self._tr("log"))
+        self._copy_diag_btn.setText(self._tr("copy_diagnostics"))
+        self._save_log_btn.setText(self._tr("save_log"))
         self._clear_log_btn.setText(self._tr("clear_log"))
         self._lib_title.setText(self._tr("optional_libs"))
         self._lib_freertos.setText(self._tr("lib_freertos"))
@@ -783,6 +854,7 @@ class MainWindow(QMainWindow):
         self._about_btn.setText(self._tr("about"))
         self._help_btn.setText(self._tr("help"))
         self._hxtal_label.setText(self._tr("hxtal_freq"))
+        self._update_sdk_match()
 
     def _show_help(self):
         QMessageBox.information(self, self._tr("help"), self._tr("help_text"))
@@ -806,6 +878,7 @@ class MainWindow(QMainWindow):
         if path:
             self._sdk_root.setText(path)
             self._sdk.set_path("SDK_ROOT", path)
+            self._update_sdk_match()
 
     def _browse_output(self):
         path = QFileDialog.getExistingDirectory(self, self._tr("select_output"))
@@ -814,10 +887,12 @@ class MainWindow(QMainWindow):
 
     def _populate_families(self):
         self._family_combo.addItems(self._chip_db.get_families())
+        self._update_sdk_match()
 
     def _on_family_changed(self, family: str):
         self._chip_combo.clear()
         self._chip_combo.addItems(self._chip_db.get_chips_for_family(family))
+        self._update_sdk_match()
 
     def _on_rtos_toggled(self, checked: bool):
         sender = self.sender()
@@ -826,9 +901,30 @@ class MainWindow(QMainWindow):
                 self._lib_rtt_nano.setChecked(False)
             elif sender is self._lib_rtt_nano:
                 self._lib_freertos.setChecked(False)
+        self._update_sdk_match()
 
     def _clear_log(self):
         self._log.clear()
+
+    def _save_log(self):
+        default_path = Path.home() / "Desktop" / "MCUQuickStart-log.txt"
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            self._tr("save_log_title"),
+            str(default_path),
+            self._tr("text_file_filter"),
+        )
+        if not path:
+            return
+        content = self._log.toPlainText().strip()
+        if self._last_generation_context or self._last_validation_results:
+            content = f"{self._build_diagnostics_text()}\n\n--- Log ---\n{content}"
+        Path(path).write_text(content, encoding="utf-8")
+        self._log_msg(self._tr("log_saved", path=path), "success")
+
+    def _copy_diagnostics(self):
+        QApplication.clipboard().setText(self._build_diagnostics_text())
+        self._log_msg(self._tr("diagnostics_copied"), "success")
 
     def _open_output_folder(self):
         if self._last_output_path and self._last_output_path.exists():
@@ -839,6 +935,69 @@ class MainWindow(QMainWindow):
                 self._tr("open_folder_missing", path=str(self._last_output_path)),
                 "error",
             )
+
+    def _set_state(self, widget: QWidget, state: str):
+        widget.setProperty("state", state)
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+
+    def _selected_template_type(self) -> str:
+        if self._tmpl_led.isChecked():
+            return "led"
+        if self._tmpl_uart.isChecked():
+            return "uart"
+        return "empty"
+
+    def _selected_optional_libs(self) -> list[str]:
+        optional_libs = []
+        if self._lib_freertos.isChecked():
+            optional_libs.append("freertos")
+        if self._lib_rtt_nano.isChecked():
+            optional_libs.append("rtt_nano")
+        return optional_libs
+
+    def _selected_build_system(self) -> str:
+        return "both" if self._lib_gcc.isChecked() else "keil"
+
+    def _update_sdk_match(self):
+        family = self._family_combo.currentText()
+        chip = self._chip_combo.currentText()
+        chip_config = self._chip_db.get_chip(family, chip) if family and chip else None
+        sdk_root = Path(self._sdk_root.text().strip()) if self._sdk_root.text().strip() else None
+
+        if not chip_config:
+            self._sdk_match_label.setText("")
+            return
+        if not sdk_root or not sdk_root.is_dir():
+            self._sdk_match_label.setText(self._tr("sdk_match_need_root"))
+            self._set_state(self._sdk_match_label, "warn")
+            return
+
+        matches = []
+        main_match = SDKManager._search_sdk_dir(sdk_root, chip_config.get("sdk_subdir", ""))
+        if main_match:
+            matches.append(Path(main_match).name)
+
+        missing = []
+        if not main_match:
+            missing.append(chip_config.get("sdk_subdir", "SDK"))
+
+        optional_configs = chip_config.get("optional_libs", {})
+        for lib in self._selected_optional_libs():
+            cfg = optional_configs.get(lib, {})
+            subdir = cfg.get("sdk_subdir", lib)
+            match = SDKManager._search_sdk_dir(sdk_root, subdir)
+            if match:
+                matches.append(Path(match).name)
+            else:
+                missing.append(subdir)
+
+        if missing:
+            self._sdk_match_label.setText(self._tr("sdk_match_missing", names=", ".join(missing)))
+            self._set_state(self._sdk_match_label, "warn")
+        else:
+            self._sdk_match_label.setText(self._tr("sdk_match_ok", names=", ".join(matches)))
+            self._set_state(self._sdk_match_label, "ok")
 
     def _log_msg(self, msg: str, level: str = "info"):
         if self._theme == "light":
@@ -897,17 +1056,112 @@ class MainWindow(QMainWindow):
         self._gen_btn.setText(self._tr("generating_btn") if busy else self._tr("generate"))
         if busy:
             self._last_output_path = None
+            self._last_validation_results = []
             self._result_panel.setVisible(False)
 
-    def _show_result_banner(self, text: str, state: str):
+    def _show_result_banner(self, text: str, state: str, details: str = ""):
         self._result_banner.setText(text)
-        self._result_panel.setProperty("state", state)
-        self._result_banner.setProperty("state", state)
-        self._result_panel.style().unpolish(self._result_panel)
-        self._result_panel.style().polish(self._result_panel)
-        self._result_banner.style().unpolish(self._result_banner)
-        self._result_banner.style().polish(self._result_banner)
+        self._result_details.setText(details)
+        self._result_details.setVisible(bool(details))
+        self._set_state(self._result_panel, state)
+        self._set_state(self._result_banner, state)
+        self._set_state(self._result_details, state)
         self._result_panel.setVisible(True)
+
+    def _run_preflight(
+        self,
+        sdk_root: str,
+        chip_config: dict,
+        output_dir: Path,
+        optional_libs: list[str],
+    ) -> list[CheckResult]:
+        results: list[CheckResult] = []
+        sdk_root_path = Path(sdk_root) if sdk_root else None
+        if not sdk_root_path or not sdk_root_path.is_dir():
+            results.append(CheckResult("error", self._tr("preflight_sdk_root"), sdk_root or self._tr("not_set")))
+        else:
+            results.append(CheckResult("ok", self._tr("preflight_sdk_root"), str(sdk_root_path)))
+            sdk_subdir = chip_config.get("sdk_subdir", "")
+            sdk_path = self._sdk.resolve_sdk(str(sdk_root_path), sdk_subdir)
+            if sdk_path:
+                results.append(CheckResult("ok", self._tr("preflight_chip_sdk"), sdk_path))
+            else:
+                results.append(CheckResult("error", self._tr("preflight_chip_sdk"), sdk_subdir))
+
+            optional_configs = chip_config.get("optional_libs", {})
+            for lib in optional_libs:
+                cfg = optional_configs.get(lib, {})
+                subdir = cfg.get("sdk_subdir", lib)
+                lib_path = self._sdk.resolve_sdk(str(sdk_root_path), subdir)
+                name_key = {
+                    "freertos": "preflight_freertos",
+                    "rtt_nano": "preflight_rtt_nano",
+                }.get(lib, "")
+                name = self._tr(name_key) if name_key else lib
+                if lib_path:
+                    results.append(CheckResult("ok", name, lib_path))
+                else:
+                    results.append(CheckResult("error", name, subdir))
+
+        check_dir = output_dir if output_dir.exists() else output_dir.parent
+        if check_dir.exists() and os.access(check_dir, os.W_OK):
+            results.append(CheckResult("ok", self._tr("preflight_output"), str(output_dir)))
+        else:
+            results.append(CheckResult("error", self._tr("preflight_output"), str(output_dir)))
+        return results
+
+    def _handle_preflight_failures(self, results: list[CheckResult]) -> bool:
+        errors = [item for item in results if item.status == "error"]
+        for item in results:
+            level = "success" if item.status == "ok" else "error"
+            self._log_msg(f"[PREFLIGHT] {item.name} - {item.detail}", level)
+        if not errors:
+            return True
+        message = "\n".join(f"- {item.name}: {item.detail}" for item in errors)
+        QMessageBox.warning(
+            self,
+            self._tr("preflight_failed_title"),
+            self._tr("preflight_failed_text", details=message),
+        )
+        self._status_label.setText(self._tr("preflight_failed_status"))
+        return False
+
+    def _resolve_output_conflict(self, output_path: Path) -> Path | None:
+        if not output_path.exists():
+            return output_path
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle(self._tr("output_exists_title"))
+        box.setText(self._tr("output_exists_text", path=str(output_path)))
+        overwrite_btn = box.addButton(self._tr("overwrite"), QMessageBox.ButtonRole.DestructiveRole)
+        rename_btn = box.addButton(self._tr("auto_rename"), QMessageBox.ButtonRole.AcceptRole)
+        cancel_btn = box.addButton(self._tr("cancel"), QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+
+        clicked = box.clickedButton()
+        if clicked == cancel_btn:
+            return None
+        if clicked == rename_btn:
+            renamed = self._unique_output_path(output_path)
+            self._log_msg(self._tr("output_auto_renamed", path=str(renamed)), "info")
+            return renamed
+        if clicked == overwrite_btn:
+            if output_path.is_dir():
+                shutil.rmtree(output_path)
+            else:
+                output_path.unlink()
+            self._log_msg(self._tr("output_overwritten", path=str(output_path)), "warn")
+            return output_path
+        return None
+
+    @staticmethod
+    def _unique_output_path(output_path: Path) -> Path:
+        for index in range(1, 1000):
+            candidate = output_path.with_name(f"{output_path.name}_{index}")
+            if not candidate.exists():
+                return candidate
+        return output_path.with_name(f"{output_path.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}")
 
     def _on_generate(self):
         sdk_root = self._sdk_root.text().strip()
@@ -943,29 +1197,40 @@ class MainWindow(QMainWindow):
         chip_config["config"] = dict(chip_config.get("config", {}))
         chip_config["config"]["hxtal_hz"] = hxtal_mhz * 1000000
 
-        tmpl_type = "empty"
-        if self._tmpl_led.isChecked():
-            tmpl_type = "led"
-        elif self._tmpl_uart.isChecked():
-            tmpl_type = "uart"
+        tmpl_type = self._selected_template_type()
+        optional_libs = self._selected_optional_libs()
+        build_system = self._selected_build_system()
+        output_path = output_dir / proj_name
 
-        optional_libs = []
-        if self._lib_freertos.isChecked():
-            optional_libs.append("freertos")
-        if self._lib_rtt_nano.isChecked():
-            optional_libs.append("rtt_nano")
+        preflight_results = self._run_preflight(sdk_root, chip_config, output_dir, optional_libs)
+        if not self._handle_preflight_failures(preflight_results):
+            return
 
-        build_system = "both" if self._lib_gcc.isChecked() else "keil"
+        resolved_output_path = self._resolve_output_conflict(output_path)
+        if resolved_output_path is None:
+            self._status_label.setText(self._tr("ready"))
+            self._log_msg(self._tr("generation_cancelled"), "warn")
+            return
+        output_path = resolved_output_path
 
         self._set_busy(True)
         QApplication.processEvents()
 
         try:
-            output_path = output_dir / proj_name
             self._log_msg(
                 self._tr("generating", proj_name=proj_name, chip=chip, tmpl_type=tmpl_type),
                 "info",
             )
+            self._last_generation_context = {
+                "version": self.APP_VERSION,
+                "family": family,
+                "chip": chip,
+                "template": tmpl_type,
+                "optional_libs": ", ".join(optional_libs) if optional_libs else "none",
+                "build_system": build_system,
+                "sdk_root": sdk_root,
+                "output_path": str(output_path),
+            }
             self._gen.generate(
                 family,
                 chip,
@@ -979,7 +1244,7 @@ class MainWindow(QMainWindow):
             self._set_busy(False, self._tr("done_status"))
             self._last_output_path = output_path
             self._log_msg(self._tr("done", path=str(output_path)), "success")
-            issue_count = self._log_validation_report(
+            issue_count, report_details = self._log_validation_report(
                 output_path,
                 proj_name,
                 chip_config,
@@ -989,11 +1254,11 @@ class MainWindow(QMainWindow):
             if issue_count:
                 text = self._tr("report_issues", count=issue_count)
                 self._status_label.setText(text)
-                self._show_result_banner(text, "warn")
+                self._show_result_banner(text, "warn", report_details)
             else:
                 text = self._tr("report_ok")
                 self._status_label.setText(text)
-                self._show_result_banner(text, "success")
+                self._show_result_banner(text, "success", report_details)
         except Exception as exc:
             self._log_msg(f"Error: {exc}", "error")
             QMessageBox.critical(self, self._tr("error"), str(exc))
@@ -1008,7 +1273,7 @@ class MainWindow(QMainWindow):
         chip_config: dict,
         optional_libs: list[str],
         build_system: str,
-    ) -> int:
+    ) -> tuple[int, str]:
         results = self._validator.validate(
             output_path,
             project_name,
@@ -1016,11 +1281,25 @@ class MainWindow(QMainWindow):
             optional_libs=optional_libs,
             build_system=build_system,
         )
-        issue_count = sum(1 for item in results if item.status != "ok")
-        ok_count = len(results) - issue_count
+        self._last_validation_results = results
+        ok_count = sum(1 for item in results if item.status == "ok")
+        warn_count = sum(1 for item in results if item.status == "warn")
+        error_count = sum(1 for item in results if item.status == "error")
+        issue_count = warn_count + error_count
         summary_level = "warn" if issue_count else "success"
+        report_details = self._tr(
+            "report_summary",
+            ok=ok_count,
+            warn=warn_count,
+            error=error_count,
+        )
         self._log_msg(
-            f"Generation report: {ok_count} passed, {issue_count} issue(s)",
+            self._tr(
+                "generation_report_summary",
+                ok=ok_count,
+                warn=warn_count,
+                error=error_count,
+            ),
             summary_level,
         )
         for item in results:
@@ -1035,4 +1314,39 @@ class MainWindow(QMainWindow):
                 badge = "ERROR"
             detail = f" - {item.detail}" if item.detail else ""
             self._log_msg(f"[CHECK] {badge} {item.name}{detail}", level)
-        return issue_count
+        return issue_count, report_details
+
+    def _build_diagnostics_text(self) -> str:
+        context = self._last_generation_context or {
+            "version": self.APP_VERSION,
+            "family": self._family_combo.currentText(),
+            "chip": self._chip_combo.currentText(),
+            "template": self._selected_template_type(),
+            "optional_libs": ", ".join(self._selected_optional_libs()) or "none",
+            "build_system": self._selected_build_system(),
+            "sdk_root": self._sdk_root.text().strip(),
+            "output_path": str(Path(self._output_dir.text().strip()) / self._proj_name.text().strip()),
+        }
+        lines = [
+            "MCUQuickStart Diagnostics",
+            f"Version: {context.get('version', self.APP_VERSION)}",
+            f"Chip Family: {context.get('family', '')}",
+            f"Chip Model: {context.get('chip', '')}",
+            f"Template: {context.get('template', '')}",
+            f"Optional Libs: {context.get('optional_libs', '')}",
+            f"Build System: {context.get('build_system', '')}",
+            f"SDK Root: {context.get('sdk_root', '')}",
+            f"Output Path: {context.get('output_path', '')}",
+        ]
+        if self._last_validation_results:
+            lines.append("")
+            lines.append("Validation:")
+            for item in self._last_validation_results:
+                detail = f" - {item.detail}" if item.detail else ""
+                lines.append(f"[{item.status.upper()}] {item.name}{detail}")
+        log_text = self._log.toPlainText().strip()
+        if log_text:
+            lines.append("")
+            lines.append("Recent Log:")
+            lines.append(log_text)
+        return "\n".join(lines)
