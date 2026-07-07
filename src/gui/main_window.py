@@ -7,10 +7,11 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QPoint, Qt, QTimer, QUrl
 from PyQt6.QtGui import QDesktopServices, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QFileDialog,
@@ -19,6 +20,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListView,
     QMainWindow,
     QMessageBox,
     QProgressBar,
@@ -35,6 +37,57 @@ from src.core.i18n import I18n
 from src.core.project_generator import ProjectGenerator
 from src.core.project_validator import CheckResult, ProjectValidator
 from src.core.sdk_manager import SDKManager
+
+
+class AppComboBox(QComboBox):
+    POPUP_GAP = 4
+    POPUP_MAX_HEIGHT = 620
+    POPUP_VISIBLE_ROWS = 6
+    POPUP_FRAME_PADDING = 28
+
+    def __init__(self):
+        super().__init__()
+        view = QListView()
+        view.setObjectName("comboPopup")
+        view.setFrameShape(QFrame.Shape.NoFrame)
+        view.setUniformItemSizes(True)
+        view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        view.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        self.setView(view)
+        self.setMaxVisibleItems(self.POPUP_VISIBLE_ROWS)
+
+    def showPopup(self):
+        super().showPopup()
+        QTimer.singleShot(0, self._place_popup)
+
+    def _place_popup(self):
+        view = self.view()
+        popup = view.window()
+        row_height = view.sizeHintForRow(0)
+        if row_height <= 0:
+            row_height = 32
+        row_height = max(row_height, 36)
+
+        visible_rows = max(1, min(self.count(), self.maxVisibleItems()))
+        height = min(
+            (row_height * visible_rows) + self.POPUP_FRAME_PADDING,
+            self.POPUP_MAX_HEIGHT,
+        )
+        width = self.width()
+        pos = self.mapToGlobal(QPoint(0, self.height() + self.POPUP_GAP))
+
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is not None:
+            bounds = screen.availableGeometry()
+            if pos.y() + height > bounds.bottom():
+                pos.setY(self.mapToGlobal(QPoint(0, -self.POPUP_GAP)).y() - height)
+            if pos.x() + width > bounds.right():
+                pos.setX(bounds.right() - width)
+            if pos.x() < bounds.left():
+                pos.setX(bounds.left())
+
+        view.setFixedWidth(width)
+        popup.setGeometry(pos.x(), pos.y(), width, height)
 
 
 class MainWindow(QMainWindow):
@@ -112,7 +165,7 @@ class MainWindow(QMainWindow):
         self._theme_label.setObjectName("fieldLabel")
         header.addWidget(self._theme_label)
 
-        self._theme_combo = QComboBox()
+        self._theme_combo = AppComboBox()
         self._theme_combo.setMinimumWidth(108)
         self._theme_combo.currentIndexChanged.connect(self._on_theme_changed)
         header.addWidget(self._theme_combo)
@@ -121,11 +174,9 @@ class MainWindow(QMainWindow):
         self._lang_label.setObjectName("fieldLabel")
         header.addWidget(self._lang_label)
 
-        self._lang_combo = QComboBox()
+        self._lang_combo = AppComboBox()
         self._lang_combo.setMinimumWidth(112)
-        self._lang_combo.addItems(["Chinese", "English"])
-        self._lang_combo.setCurrentText("English")
-        self._lang_combo.currentTextChanged.connect(self._on_lang_changed)
+        self._lang_combo.currentIndexChanged.connect(self._on_lang_changed)
         header.addWidget(self._lang_combo)
         layout.addLayout(header)
 
@@ -188,11 +239,11 @@ class MainWindow(QMainWindow):
 
         self._family_label = QLabel()
         self._family_label.setObjectName("fieldLabel")
-        self._family_combo = QComboBox()
+        self._family_combo = AppComboBox()
         self._family_combo.currentTextChanged.connect(self._on_family_changed)
         self._chip_label = QLabel()
         self._chip_label.setObjectName("fieldLabel")
-        self._chip_combo = QComboBox()
+        self._chip_combo = AppComboBox()
         self._chip_combo.currentTextChanged.connect(self._update_sdk_match)
         self._name_label = QLabel()
         self._name_label.setObjectName("fieldLabel")
@@ -206,7 +257,7 @@ class MainWindow(QMainWindow):
         self._out_btn.clicked.connect(self._browse_output)
         self._hxtal_label = QLabel()
         self._hxtal_label.setObjectName("fieldLabel")
-        self._hxtal_combo = QComboBox()
+        self._hxtal_combo = AppComboBox()
         self._hxtal_combo.addItems(["8 MHz", "25 MHz"])
         self._hxtal_combo.setCurrentText("8 MHz")
 
@@ -436,13 +487,53 @@ class MainWindow(QMainWindow):
                 height: 12px;
                 margin-right: 8px;
             }
-            QComboBox QAbstractItemView {
+            QListView#comboPopup {
                 border: 1px solid #c7d0dd;
-                selection-background-color: #dcefe8;
-                selection-color: #101828;
+                border-radius: 7px;
+                padding: 4px;
                 background: #ffffff;
                 color: #101828;
                 outline: 0;
+                show-decoration-selected: 0;
+                selection-background-color: #1f9f78;
+                selection-color: #ffffff;
+            }
+            QListView#comboPopup::item {
+                min-height: 28px;
+                padding: 4px 8px;
+                border-radius: 4px;
+                color: #101828;
+            }
+            QListView#comboPopup::item:hover {
+                background: #eef4fb;
+            }
+            QListView#comboPopup::item:selected {
+                background: #1f9f78;
+                color: #ffffff;
+            }
+            QListView#comboPopup QScrollBar:vertical {
+                width: 8px;
+                margin: 4px 2px 4px 0;
+                border: 0;
+                background: transparent;
+            }
+            QListView#comboPopup QScrollBar::handle:vertical {
+                min-height: 24px;
+                border-radius: 4px;
+                background: #cbd5e1;
+            }
+            QListView#comboPopup QScrollBar::handle:vertical:hover {
+                background: #94a3b8;
+            }
+            QListView#comboPopup QScrollBar::add-line:vertical,
+            QListView#comboPopup QScrollBar::sub-line:vertical {
+                height: 0;
+                border: 0;
+                background: transparent;
+            }
+            QListView#comboPopup QScrollBar::add-page:vertical,
+            QListView#comboPopup QScrollBar::sub-page:vertical {
+                background: transparent;
             }
             QPushButton {
                 min-height: 30px;
@@ -668,13 +759,53 @@ class MainWindow(QMainWindow):
                 background: #132030;
                 border-color: #3b5068;
             }
-            QComboBox QAbstractItemView {
+            QListView#comboPopup {
                 border: 1px solid #334255;
-                selection-background-color: #1f7a5f;
-                selection-color: #ffffff;
+                border-radius: 7px;
+                padding: 4px;
                 background: #101a25;
                 color: #ecf2f8;
                 outline: 0;
+                show-decoration-selected: 0;
+                selection-background-color: #24b487;
+                selection-color: #ffffff;
+            }
+            QListView#comboPopup::item {
+                min-height: 28px;
+                padding: 4px 8px;
+                border-radius: 4px;
+                color: #ecf2f8;
+            }
+            QListView#comboPopup::item:hover {
+                background: #132f45;
+            }
+            QListView#comboPopup::item:selected {
+                background: #1f9f78;
+                color: #ffffff;
+            }
+            QListView#comboPopup QScrollBar:vertical {
+                width: 8px;
+                margin: 4px 2px 4px 0;
+                border: 0;
+                background: transparent;
+            }
+            QListView#comboPopup QScrollBar::handle:vertical {
+                min-height: 24px;
+                border-radius: 4px;
+                background: #334255;
+            }
+            QListView#comboPopup QScrollBar::handle:vertical:hover {
+                background: #4b637d;
+            }
+            QListView#comboPopup QScrollBar::add-line:vertical,
+            QListView#comboPopup QScrollBar::sub-line:vertical {
+                height: 0;
+                border: 0;
+                background: transparent;
+            }
+            QListView#comboPopup QScrollBar::add-page:vertical,
+            QListView#comboPopup QScrollBar::sub-page:vertical {
+                background: transparent;
             }
             QPushButton {
                 min-height: 30px;
@@ -827,6 +958,14 @@ class MainWindow(QMainWindow):
         self._theme_combo.setCurrentIndex(max(index, 0))
         self._theme_combo.blockSignals(False)
         self._lang_label.setText(self._tr("language"))
+        current_lang = self._i18n.language
+        self._lang_combo.blockSignals(True)
+        self._lang_combo.clear()
+        self._lang_combo.addItem(self._tr("language_zh"), "zh")
+        self._lang_combo.addItem(self._tr("language_en"), "en")
+        index = self._lang_combo.findData(current_lang)
+        self._lang_combo.setCurrentIndex(max(index, 0))
+        self._lang_combo.blockSignals(False)
         self._sdk_title.setText(self._tr("sdk_root"))
         self._sdk_tip.setText(self._tr("sdk_root_tip"))
         self._root_label.setText(self._tr("root_path"))
@@ -862,8 +1001,10 @@ class MainWindow(QMainWindow):
     def _show_about(self):
         QMessageBox.about(self, self._tr("about_title"), self._tr("about_text"))
 
-    def _on_lang_changed(self, text: str):
-        lang = "zh" if text == "Chinese" else "en"
+    def _on_lang_changed(self):
+        lang = self._lang_combo.currentData()
+        if not lang or lang == self._i18n.language:
+            return
         self._i18n.set_language(lang)
         self._retranslate_ui()
 

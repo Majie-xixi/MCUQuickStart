@@ -63,6 +63,8 @@
   "select_output": "选择输出目录",
   "hxtal_freq": "外部晶振:",
   "language": "语言",
+  "language_zh": "中文",
+  "language_en": "English",
   "theme": "主题",
   "theme_dark": "暗黑",
   "theme_light": "亮色",

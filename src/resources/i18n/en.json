@@ -63,6 +63,8 @@
   "select_output": "Select Output Directory",
   "hxtal_freq": "HXTAL Freq:",
   "language": "Language",
+  "language_zh": "Chinese",
+  "language_en": "English",
   "theme": "Theme",
   "theme_dark": "Dark",
   "theme_light": "Light",
