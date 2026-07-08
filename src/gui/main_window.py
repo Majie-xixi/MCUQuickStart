@@ -117,6 +117,7 @@ class MainWindow(QMainWindow):
         self._last_output_path: Path | None = None
         self._last_validation_results: list[CheckResult] = []
         self._last_generation_context: dict[str, str] = {}
+        self._log_entries: list[tuple[str, str]] = []
 
         self._build_ui()
         self._apply_theme()
@@ -1013,6 +1014,7 @@ class MainWindow(QMainWindow):
         if theme:
             self._theme = theme
             self._apply_theme()
+            self._refresh_log()
 
     def _browse_sdk(self):
         path = QFileDialog.getExistingDirectory(self, self._tr("select_sdk_root"))
@@ -1045,6 +1047,7 @@ class MainWindow(QMainWindow):
         self._update_sdk_match()
 
     def _clear_log(self):
+        self._log_entries.clear()
         self._log.clear()
 
     def _save_log(self):
@@ -1141,6 +1144,18 @@ class MainWindow(QMainWindow):
             self._set_state(self._sdk_match_label, "ok")
 
     def _log_msg(self, msg: str, level: str = "info"):
+        self._log_entries.append((msg, level))
+        self._append_log_entry(msg, level)
+
+    def _refresh_log(self):
+        if not hasattr(self, "_log"):
+            return
+        entries = list(self._log_entries)
+        self._log.clear()
+        for msg, level in entries:
+            self._append_log_entry(msg, level)
+
+    def _append_log_entry(self, msg: str, level: str = "info"):
         if self._theme == "light":
             colors = {
                 "info": ("INFO", "#0369a1"),
@@ -1157,8 +1172,8 @@ class MainWindow(QMainWindow):
                 "error": ("ERROR", "#fca5a5"),
                 "warn": ("WARN", "#fcd34d"),
             }
-            time_color = "#667085"
-            text_color = "#d0d5dd"
+            time_color = "#9aa7b8"
+            text_color = "#e5edf5"
         badge, badge_color = colors.get(level, colors["info"])
         text = html.escape(msg)
         keywords = {
